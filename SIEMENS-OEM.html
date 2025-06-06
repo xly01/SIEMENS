@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电气柜综合指南</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Professional Neutral (adapted from source files) -->
+    <!-- Application Structure Plan: This SPA combines three distinct HTML reports into a single-page application using a fixed bottom navigation bar for primary navigation. Each original HTML content is loaded into a separate tab pane. Cartoon-like emojis are used for tab icons. The internal navigation and interactivity of each original document are preserved within its respective content pane. This design aims to provide a unified access point while maintaining the integrity and unique features of each individual report. -->
+    <!-- Visualization & Content Choices: Visualizations (Chart.js charts, HTML/CSS diagrams) and interactive elements (toggles, modals, sliders) are inherited from the source HTML files. The merging process focuses on integrating these existing components into their respective tabbed sections within the new SPA. JavaScript logic from each source file is namespaced and initialized on-demand when a tab becomes active to prevent conflicts and ensure proper functionality. The core goal is successful integration and preservation of original interactivity. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { 
+            font-family: 'Noto Sans SC', sans-serif; 
+            background-color: #f8fafc; /* Tailwind slate-50 */
+            color: #1f2937; /* Tailwind slate-800 */
+            margin: 0;
+            display: flex;
+            flex-direction: column; /* Main axis is vertical */
+            height: 100vh;
+            overflow: hidden; 
+        }
+        
+        #main-content-area {
+            flex-grow: 1; /* Takes up available space */
+            overflow-y: auto; /* Allows content within active pane to scroll */
+            position: relative; /* For absolute positioning of panes if needed, or just for structure */
+        }
+
+        .tab-pane {
+            display: none;
+            height: 100%; 
+            overflow-y: auto;
+            padding: 1rem; /* Default padding for panes */
+        }
+        .tab-pane.active-pane {
+            display: block;
+        }
+
+        #bottom-tab-bar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #ffffff; /* Tailwind white */
+            border-top: 1px solid #e5e7eb; /* Tailwind gray-200 */
+            padding: 0.5rem 0;
+            flex-shrink: 0; /* Prevents shrinking */
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .bottom-tab-button {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 0.25rem;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s, transform 0.1s;
+            color: #6b7280; /* Tailwind gray-500 */
+        }
+
+        .bottom-tab-button .tab-icon {
+            font-size: 1.75rem; /* Larger emoji */
+            margin-bottom: 0.25rem;
+        }
+        .bottom-tab-button .tab-label {
+            font-size: 0.75rem; /* Smaller text label */
+            font-weight: 500;
+        }
+
+        .bottom-tab-button.active-bottom-tab {
+            color: #2563eb; /* Tailwind blue-600 */
+            transform: translateY(-2px);
+        }
+        .bottom-tab-button.active-bottom-tab .tab-icon {
+             transform: scale(1.1);
+        }
+
+
+        /* Styles from 常见错误.html (Page1) */
+        .nav-active-P1 { color: #2563eb; border-bottom-color: #2563eb; background-color: #eff6ff; }
+        .nav-inactive-P1 { color: #4b5563; border-bottom-color: transparent; }
+        .content-active-P1 { display: block; }
+        .content-inactive-P1 { display: none; }
+        .chart-container-P1 { position: relative; margin: auto; height: 350px; width: 100%; max-width: 600px; }
+        
+        /* Styles from 标识&接地.html (Page2) */
+        .tab-button-P2.active { border-color: #2563eb; color: #2563eb; background-color: #eff6ff; }
+        .tab-content-P2 { display: none; }
+        .tab-content-P2.active { display: block; }
+        .chart-container-P2 { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container-P2 { height: 350px; } }
+
+        /* Styles from EMC&散热.html (Page3) */
+        .tab-active-P3 { border-color: #3b82f6; color: #3b82f6; background-color: #eff6ff; }
+        .tab-inactive-P3 { border-color: transparent; color: #6b7280; }
+        .content-active-P3 { display: block; }
+        .content-inactive-P3 { display: none; }
+        .practice-card-P3 { transition: all 0.3s ease-in-out; }
+        .practice-diagram-P3 { border: 2px dashed #9ca3af; min-height: 200px; transition: background-color 0.3s; }
+        .slider-P3::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #3b82f6; cursor: pointer; border-radius: 50%; }
+        .slider-P3::-moz-range-thumb { width: 20px; height: 20px; background: #3b82f6; cursor: pointer; border-radius: 50%; }
+        .chart-container-P3 { position: relative; margin: auto; height: 300px; width: 100%; max-width: 450px; }
+        .h-bar-chart-container-P3 { position: relative; margin: auto; height: 320px; width: 100%; max-width: 800px; }
+        
+        .fade-in { animation: fadeInAnimation 0.5s ease-in-out; }
+        @keyframes fadeInAnimation { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        details > summary { cursor: pointer; }
+        details[open] > summary { margin-bottom: 0.5rem; }
+
+    </style>
+</head>
+<body>
+    <main id="main-content-area">
+        <div id="contentPage1" class="tab-pane active-pane">
+            <!-- Content from 常见错误.html body will be injected here -->
+        </div>
+        <div id="contentPage2" class="tab-pane">
+            <!-- Content from 标识&接地.html body will be injected here -->
+        </div>
+        <div id="contentPage3" class="tab-pane">
+            <!-- Content from EMC&散热.html body will be injected here -->
+        </div>
+    </main>
+
+    <nav id="bottom-tab-bar">
+        <button data-tab="contentPage1" class="bottom-tab-button active-bottom-tab">
+            <span class="tab-icon">🧐</span>
+            <span class="tab-label">常见错误</span>
+        </button>
+        <button data-tab="contentPage2" class="bottom-tab-button">
+            <span class="tab-icon">🏷️</span>
+            <span class="tab-label">标识与接地</span>
+        </button>
+        <button data-tab="contentPage3" class="bottom-tab-button">
+            <span class="tab-icon">♨️</span>
+            <span class="tab-label">EMC与散热</span>
+        </button>
+    </nav>
+
+    <script>
+        let initializedTabs = {
+            contentPage1: false,
+            contentPage2: false,
+            contentPage3: false
+        };
+
+        // Global variable for reportData for Page 1 (常见错误.html)
+        // This needs to be accessible by functions like togglePracticeP1, updatePracticeViewP1
+        let reportDataP1 = []; 
+
+        function switchToMainTab(targetTabId) {
+            document.querySelectorAll('.bottom-tab-button').forEach(button => {
+                button.classList.toggle('active-bottom-tab', button.dataset.tab === targetTabId);
+            });
+
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.toggle('active-pane', pane.id === targetTabId);
+                if (pane.id === targetTabId) {
+                    if (!initializedTabs[targetTabId]) {
+                        if (targetTabId === 'contentPage1') initContentPage1();
+                        else if (targetTabId === 'contentPage2') initContentPage2();
+                        else if (targetTabId === 'contentPage3') initContentPage3();
+                        initializedTabs[targetTabId] = true;
+                    }
+                }
+            });
+        }
+
+        document.getElementById('bottom-tab-bar').addEventListener('click', (event) => {
+            const button = event.target.closest('.bottom-tab-button');
+            if (button) {
+                switchToMainTab(button.dataset.tab);
+            }
+        });
+        
+        const contentForPage1 = `
+            <div id="app-container-P1" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+                <header class="text-center mb-8">
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-900">电气柜接线常见错误分析与防范</h1>
+                    <p class="mt-2 text-lg text-slate-600">HZ OEM  Xie Li Yang</p>
+                </header>
+                <main class="bg-white rounded-2xl shadow-xl">
+                    <nav id="main-nav-P1" class="sticky top-0 z-10 bg-white/70 backdrop-blur-md border-b border-slate-200 grid grid-cols-3 sm:grid-cols-6 text-sm font-medium text-center text-slate-600 rounded-t-2xl">
+                    </nav>
+                    <div id="content-container-P1" class="p-4 md:p-8">
+                    </div>
+                </main>
+                <footer class="text-center mt-8 text-sm text-slate-500">
+                    <p>基于《电气柜接线常见错误分析与防范》报告内容创建，13372509117 西门子谢礼阳</p>
+                </footer>
+            </div>
+        `;
+
+        const contentForPage2 = `
+            <div class="container mx-auto p-4 sm:p-6 md:p-8" id="containerP2">
+                <header class="text-center mb-8">
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900">电气柜安全与规范交互式指南</h1>
+                    <p class="mt-2 text-lg text-gray-600">HZ OEM 小课堂 Xie Li Yang</p>
+                </header>
+                <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+                    <div class="border-b border-gray-200 mb-6">
+                        <nav class="flex flex-wrap -mb-px" id="tab-nav-P2">
+                            <button data-tab="grounding-P2" class="tab-button-P2 active text-base sm:text-lg font-medium text-center text-gray-500 hover:text-blue-600 border-b-2 border-transparent px-4 py-3 transition-colors duration-200">
+                                ⚡️ 接地系统
+                            </button>
+                            <button data-tab="protection-P2" class="tab-button-P2 text-base sm:text-lg font-medium text-center text-gray-500 hover:text-blue-600 border-b-2 border-transparent px-4 py-3 transition-colors duration-200">
+                                🛡️ 全面防护
+                            </button>
+                            <button data-tab="identification-P2" class="tab-button-P2 text-base sm:text-lg font-medium text-center text-gray-500 hover:text-blue-600 border-b-2 border-transparent px-4 py-3 transition-colors duration-200">
+                                🎨 标识规范
+                            </button>
+                        </nav>
+                    </div>
+                    <div id="tab-content-container-P2">
+                        <div id="grounding-P2" class="tab-content-P2 active">
+                            <div class="prose max-w-none prose-blue"> <p>接地是电气柜安全的核心，它为人员提供触电保护，为设备提供稳定的工作基准和电磁兼容性保障。本节将通过交互式工具和指南，帮助您快速掌握接地线的选择和使用规范。</p> </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8 items-start">
+                                <div> <h3 class="text-xl font-bold mb-4">接地线径智能选择器</h3> <p class="text-gray-600 mb-4">根据国家标准 (GB/T 5226.1)，保护接地线 (PE) 的最小截面积取决于相线的截面积。请在下方输入您的相线截面积，图表将实时显示所需的最小PE线截面积。</p> <div class="flex items-center space-x-4 mb-6"> <label for="phase-wire-input-P2" class="font-medium text-gray-700">相线截面积 (S, mm²):</label> <input type="number" id="phase-wire-input-P2" value="16" min="1" class="w-24 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"> </div> <div class="chart-container-P2"> <canvas id="pe-wire-chart-P2"></canvas> </div> </div>
+                                <div> <h3 class="text-xl font-bold mb-4">接地类型与用途</h3> <ul class="space-y-4"> <li class="p-4 bg-gray-100 rounded-lg"> <h4 class="font-bold text-lg">保护接地 (PE)</h4> <p class="text-sm text-gray-700 mt-1">连接柜体、金属外壳等，防止漏电时外壳带电导致人员触电。必须使用<span class="font-bold text-yellow-600">黄绿双色线</span>。</p> </li> <li class="p-4 bg-gray-100 rounded-lg"> <h4 class="font-bold text-lg">工作接地 (功能性接地)</h4> <p class="text-sm text-gray-700 mt-1">为电气系统提供基准电位，如电源中性点接地。需根据系统类型设计。</p> </li> <li class="p-4 bg-gray-100 rounded-lg"> <h4 class="font-bold text-lg">屏蔽接地</h4> <p class="text-sm text-gray-700 mt-1">用于电缆屏蔽层，以抑制电磁干扰，需单点接地以避免环流。</p> </li> <li class="p-4 bg-gray-100 rounded-lg"> <h4 class="font-bold text-lg">防雷接地</h4> <p class="text-sm text-gray-700 mt-1">用于户外柜体，将雷击电流引入大地，需与保护接地保持安全距离。</p> </li> </ul> </div>
+                            </div>
+                        </div>
+                        <div id="protection-P2" class="tab-content-P2">
+                            <div class="prose max-w-none prose-blue"> <p>电气柜的防护是一个系统工程，涉及机械结构、电气安全、环境适应性和电磁兼容性。点击下方示意图的不同区域，可以探索电气柜各个关键部位的防护要点。</p> </div>
+                            <div class="mt-8 flex flex-col items-center"> <div class="relative w-full max-w-2xl bg-gray-100 border-2 border-gray-300 rounded-lg p-6 grid grid-cols-3 grid-rows-3 gap-4 h-[400px] md:h-[500px]"> <div class="absolute top-2 left-1/2 -translate-x-1/2 text-center"> <h3 class="font-bold text-lg text-gray-800">电气柜防护示意图</h3> <p class="text-sm text-gray-500">点击热点区域查看详情</p> </div> <div id="hotspot-ventilation-P2" class="hotspot-P2 col-span-3 row-start-1 bg-blue-100 hover:bg-blue-200 cursor-pointer rounded-md flex items-center justify-center text-blue-800 font-semibold transition-all">散热与温控</div> <div id="hotspot-door-P2" class="hotspot-P2 row-span-2 col-start-1 row-start-2 bg-green-100 hover:bg-green-200 cursor-pointer rounded-md flex items-center justify-center text-green-800 font-semibold transition-all">柜门与结构</div> <div id="hotspot-components-P2" class="hotspot-P2 row-span-1 col-start-2 row-start-2 bg-yellow-100 hover:bg-yellow-200 cursor-pointer rounded-md flex items-center justify-center text-yellow-800 font-semibold transition-all">内部器件布局</div> <div id="hotspot-emc-P2" class="hotspot-P2 row-span-1 col-start-3 row-start-2 bg-purple-100 hover:bg-purple-200 cursor-pointer rounded-md flex items-center justify-center text-purple-800 font-semibold transition-all">EMC防护</div> <div id="hotspot-cable-P2" class="hotspot-P2 col-span-3 row-start-3 bg-red-100 hover:bg-red-200 cursor-pointer rounded-md flex items-center justify-center text-red-800 font-semibold transition-all">电缆进出线</div> </div> </div>
+                        </div>
+                        <div id="identification-P2" class="tab-content-P2">
+                            <div class="prose max-w-none prose-blue"> <p>清晰、统一的标识是安全操作和高效维护的前提。这包括导线颜色、端子和器件的编号规则。本节提供了符合国标的颜色和编号规范速查表。</p> </div>
+                            <div class="mt-8"> <h3 class="text-xl font-bold mb-4">导线颜色分类及标识 (GB/T 5226.1)</h3> <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"> <div class="p-4 rounded-lg shadow" style="background-color: #FDE047; border: 2px solid #EAB308;"> <div class="w-full h-10 rounded mb-2" style="background: linear-gradient(45deg, #FDE047 50%, #4ADE80 50%);"></div> <h4 class="font-bold">黄绿双色</h4> <p class="text-sm text-gray-700">保护导线 (PE) - **强制**</p> </div> <div class="p-4 rounded-lg shadow" style="background-color: #000000;"> <h4 class="font-bold text-white">黑色</h4> <p class="text-sm text-gray-200">交流或直流动力电路</p> </div> <div class="p-4 rounded-lg shadow" style="background-color: #EF4444;"> <h4 class="font-bold text-white">红色</h4> <p class="text-sm text-gray-200">交流控制电路</p> </div> <div class="p-4 rounded-lg shadow" style="background-color: #3B82F6;"> <h4 class="font-bold text-white">蓝色</h4> <p class="text-sm text-gray-200">直流控制电路</p> </div> <div class="p-4 rounded-lg shadow" style="background-color: #A5F3FC;"> <h4 class="font-bold text-gray-800">浅蓝色</h4> <p class="text-sm text-gray-700">动力电路的中线 (N) 和中间线 (M)</p> </div> <div class="p-4 rounded-lg shadow" style="background-color: #F97316;"> <h4 class="font-bold text-white">橘黄色</h4> <p class="text-sm text-gray-200">外部电源断开后仍带电的联锁电路</p> </div> <div class="p-4 rounded-lg shadow" style="background-color: #FFFFFF; border: 1px solid #E5E7EB;"> <h4 class="font-bold text-gray-800">白色</h4> <p class="text-sm text-gray-700">与保护导线连接的电路 (中性线)</p> </div> </div> <h3 class="text-xl font-bold mt-10 mb-4">编号命名规范</h3> <div class="overflow-x-auto"> <table class="w-full text-left border-collapse"> <thead><tr><th class="py-2 px-3 bg-gray-100 font-bold uppercase text-sm text-gray-600 border-b">标识对象</th><th class="py-2 px-3 bg-gray-100 font-bold uppercase text-sm text-gray-600 border-b">命名规则</th><th class="py-2 px-3 bg-gray-100 font-bold uppercase text-sm text-gray-600 border-b">示例</th></tr></thead> <tbody> <tr class="hover:bg-gray-50"><td class="py-2 px-3 border-b border-gray-200 font-medium">端子号</td><td class="py-2 px-3 border-b border-gray-200">标识符 + 功能编码 + 流水号</td><td class="py-2 px-3 border-b border-gray-200"><code>XD1</code>, <code>X101</code></td></tr> <tr class="hover:bg-gray-50"><td class="py-2 px-3 border-b border-gray-200 font-medium">器件号</td><td class="py-2 px-3 border-b border-gray-200">简单工程: 符号+流水号 / 复杂工程: 页码+符号+流水号</td><td class="py-2 px-3 border-b border-gray-200"><code>KA1</code> / <code>50F1</code></td></tr> <tr class="hover:bg-gray-50"><td class="py-2 px-3 border-b border-gray-200 font-medium">电缆号</td><td class="py-2 px-3 border-b border-gray-200">遵循等电位原则，与原理图一致，按特定顺序编号</td><td class="py-2 px-3 border-b border-gray-200"><code>101</code>, <code>102</code>...</td></tr> </tbody> </table> </div> </div>
+                        </div>
+                    </div>
+                </div>
+                <footer class="text-center mt-8 text-sm text-gray-500"> <p>内容依据 GB/T 5226.1, GB 50169, GB 7251 等国家标准。本工具仅供参考，具体应用请遵循最新的官方标准和设计规范。</p> <p>&copy; 2024 电气柜安全与规范交互式指南</p> </footer>
+            </div>
+            <div id="modal-container-P2" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden"> <div id="modal-content-P2" class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 relative"> <button id="modal-close-P2" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors"> <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> </button> <h2 id="modal-title-P2" class="text-2xl font-bold mb-4"></h2> <div id="modal-body-P2" class="prose max-w-none prose-blue"></div> </div> </div>
+        `;
+        const contentForPage3 = `
+            <div class="container mx-auto p-4 md:p-8" id="containerP3">
+                <header class="text-center mb-8"> <h1 class="text-3xl md:text-4xl font-bold text-gray-900">电气柜接线常见错误与改进建议</h1> <p class="mt-2 text-lg text-gray-600">HZ OEM 小课堂 Xie Li Yang</p> </header>
+                <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-8"> <p class="text-gray-700 leading-relaxed">本指南旨在将复杂的电气柜接线规范转化为直观、易于理解的交互式体验。电气柜作为工业控制与电力分配的核心，其接线质量直接关系到整个系统的安全、稳定和可靠。不规范的操作是设备故障、生产中断乃至安全事故的主要诱因。通过本指南，您可以探索<span class="font-bold text-blue-600">电磁兼容性 (EMC)</span> 和<span class="font-bold text-blue-600">散热管理</span>两大关键领域中的常见问题与最佳实践，从而提升专业技能与安全意识。</p> </div>
+                <div class="bg-white rounded-xl shadow-lg">
+                    <div class="border-b border-gray-200">
+                        <nav class="flex flex-col sm:flex-row -mb-px px-4" aria-label="Tabs">
+                            <button id="tab-emc-P3" class="sm:w-1/2 text-center font-medium py-4 px-1 border-b-4 tab-active-P3"> ⚡️ 电磁兼容性 (EMC) 问题 </button>
+                            <button id="tab-thermal-P3" class="sm:w-1/2 text-center font-medium py-4 px-1 border-b-4 tab-inactive-P3"> 🌡️ 散热问题 </button>
+                        </nav>
+                    </div>
+                    <div id="content-emc-P3" class="p-4 md:p-8 content-active-P3 fade-in">
+                        <div class="max-w-4xl mx-auto"> <h2 class="text-2xl font-bold mb-2 text-gray-900">第一章：电磁兼容性 (EMC) 问题</h2> <p class="mb-6 text-gray-600">电磁兼容性(EMC)是指设备在其电磁环境中能正常工作，且不对环境造成电磁骚扰的能力。本章将通过交互式案例，展示如何识别和避免常见的EMC接线错误，确保系统稳定。</p> <div class="grid md:grid-cols-2 gap-8 mb-12 items-center"> <div class="chart-container-P3"> <canvas id="emcIssuesChartP3"></canvas> </div> <div> <h3 class="text-xl font-semibold mb-2 text-gray-800">EMC核心问题分类</h3> <p class="text-gray-600 mb-4">电气柜中的EMC问题主要可归为三大类。理解其根源是有效防护的第一步。</p> <ul class="space-y-2"> <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">●</span><div><strong class="text-gray-700">辐射骚扰:</strong> 组件或线缆像天线一样向外辐射电磁能量。</div></li> <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">●</span><div><strong class="text-gray-700">传导骚扰:</strong> 噪声通过电源线、信号线等导体传播。</div></li> <li class="flex items-start"><span class="text-yellow-500 mr-2 mt-1">●</span><div><strong class="text-gray-700">易感性/抗扰度不足:</strong> 设备抵抗外部电磁干扰的能力弱。</div></li> </ul> </div> </div> <div id="emc-practice-container-P3" class="space-y-10"></div> </div>
+                    </div>
+                    <div id="content-thermal-P3" class="p-4 md:p-8 content-inactive-P3 fade-in">
+                        <div class="max-w-5xl mx-auto"> <h2 class="text-2xl font-bold mb-2 text-gray-900">第二章：散热问题</h2> <p class="mb-6 text-gray-600">元器件产生的热量若不能有效散发，将严重影响设备寿命和系统可靠性，甚至导致停机。本章将帮助您科学地选择散热方案，并了解如何通过合理布局避免局部过热。</p> <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-8"> <p class="font-semibold text-amber-800">经验法则: “工作温度每升高10°C，电子元器件的寿命大约会缩短一半。”</p> </div> <div class="mb-12"> <h3 class="text-xl font-semibold text-center mb-4 text-gray-800">电气柜冷却方式对比</h3> <div class="h-bar-chart-container-P3"> <canvas id="coolingMethodsChartP3"></canvas> </div> </div> <div class="bg-gray-100 p-6 rounded-xl"> <h3 class="text-xl font-semibold text-center mb-1 text-gray-800">交互式散热方案选择器</h3> <p class="text-center text-gray-600 mb-6">通过调整下方参数，模拟您的工况，找到最合适的散热方案。</p> <div class="grid md:grid-cols-3 gap-6 mb-6"> <div> <label for="heatLoadP3" class="block text-sm font-medium text-gray-700">内部总热负荷 (瓦)</label> <input type="range" id="heatLoadP3" min="50" max="4000" value="500" class="slider-P3 w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"> <div class="text-center font-bold text-blue-600 mt-1"><span id="heatLoadValueP3">500</span> W</div> </div> <div> <label for="ambientTempP3" class="block text-sm font-medium text-gray-700">外部环境最高温度 (°C)</label> <input type="range" id="ambientTempP3" min="20" max="55" value="35" class="slider-P3 w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"> <div class="text-center font-bold text-blue-600 mt-1"><span id="ambientTempValueP3">35</span> °C</div> </div> <div class="flex flex-col items-center justify-center"> <label for="ipProtectionP3" class="block text-sm font-medium text-gray-700 mb-2">需要高IP防护/环境恶劣?</label> <label for="ipProtectionP3" class="inline-flex relative items-center cursor-pointer"> <input type="checkbox" value="" id="ipProtectionP3" class="sr-only peer"> <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div> <span class="ml-3 text-sm font-medium text-gray-900" id="ipProtectionValueP3">否</span> </label> </div> </div> <div id="thermal-recommendation-container-P3" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"> </div> </div> </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('contentPage1').innerHTML = contentForPage1;
+        document.getElementById('contentPage2').innerHTML = contentForPage2;
+        document.getElementById('contentPage3').innerHTML = contentForPage3;
+
+        // --- Initialization for Page 1 (常见错误.html) ---
+        function initContentPage1() {
+            reportDataP1 = [ { id: 'chapter1', title: '导线选择与处理', icon: '✒️', summary: '导线是电气连接的基础，正确的选择和处理是安全的第一步。本章关注线径、类型选择及剥线工艺。', errors: [ { title: '错误 1.1: 错误的导线类型和规格', description: '选用与实际应用场景（电压、电流、环境）不符的导线类型，或导线线径相对于电路负载过小。', bad: { practiceTitle: '错误做法: 线径过小', practiceDesc: '使用1.5mm²的导线承载一个需要20A电流的负载，远超其安全载流量。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex flex-col justify-center items-center p-4 bg-red-50 border-2 border-dashed border-red-200 rounded-lg"><div class="text-sm text-red-700 font-bold mb-2">负载: 20A</div><div class="w-2/3 h-4 bg-slate-300 rounded-full relative"><div class="h-full w-2/5 bg-slate-500 rounded-l-full"></div><div class="absolute top-1/2 left-0 -translate-y-1/2 h-1 w-full bg-orange-400 animate-pulse"></div></div><div class="text-sm text-red-700 font-bold mt-2">导线: 1.5mm² (严重过热!) 🔥</div><div class="mt-4 text-xs text-center text-red-600">危害: 绝缘加速老化，可能熔化，引发火灾风险。</div></div>`; } }, good: { practiceTitle: '正确做法: 线径匹配', practiceDesc: '为20A负载选用2.5mm²或更大线径的导线，并配备相应的20A过电流保护装置。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex flex-col justify-center items-center p-4 bg-green-50 border-2 border-dashed border-green-200 rounded-lg"><div class="text-sm text-green-800 font-bold mb-2">负载: 20A</div><div class="w-2/3 h-6 bg-slate-300 rounded-full relative"><div class="h-full w-2/5 bg-slate-500 rounded-l-full"></div><div class="absolute top-1/2 left-0 -translate-y-1/2 h-2 w-full bg-sky-500"></div></div><div class="text-sm text-green-800 font-bold mt-2">导线: 2.5mm² (安全运行) ✅</div><div class="mt-4 text-xs text-center text-green-700">效果: 导线温度正常，系统安全可靠。</div></div>`; } }, causes: ['对电路负载计算不准确', '忽视环境对导线性能的影响', '成本压力下选用低标准导线', '不熟悉或未执行电气规范'], hazards: ['导线过热与火灾风险', '电压降过大影响设备性能', '绝缘过早失效增加电击和短路风险'], preventiveMeasures: ['精确选型计算', '预留安全裕量（建议≤80%额定载流量）', '选用通过权威认证的优质导线', '熟悉并严格遵守适用电气标准'], importantNote: '线径选择不当会从根本上削弱过电流保护装置的有效性，形成危险的“保护盲区”。' }, { title: '错误 1.2: 不规范的导线剥皮', description: '剥除导线末端绝缘层时对导体造成损伤（割伤、刻痕、断股），或剥线长度不符合端子要求。', bad: { practiceTitle: '错误做法: 割伤导体/长度不当', practiceDesc: '使用不当工具或方法，导致导体表面出现刻痕，或剥线过长/过短。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full grid grid-cols-3 gap-2 p-2 text-center text-xs"><div class="p-2 bg-red-50 rounded"><div class="h-10 w-2 mx-auto bg-orange-400 relative"><div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-1 w-4 bg-red-600 transform rotate-45"></div><div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-1 w-4 bg-red-600 transform -rotate-45"></div></div><div class="mt-2 font-semibold text-red-700">割伤导体</div></div><div class="p-2 bg-red-50 rounded"><div class="h-10 w-2 mx-auto bg-orange-400" style="padding-top: 2.5rem;"></div><div class="mt-2 font-semibold text-red-700">剥线过长</div></div><div class="p-2 bg-red-50 rounded"><div class="h-10 w-2 mx-auto bg-slate-400" style="background-image: linear-gradient(to top, #f97316 25%, #64748b 25%);"></div><div class="mt-2 font-semibold text-red-700">剥线过短</div></div></div>`; } }, good: { practiceTitle: '正确做法: 完整无损，长度精确', practiceDesc: '使用专业工具，确保导体完整，长度与端子要求匹配，绝缘切口平整。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex flex-col justify-center items-center p-4 bg-green-50 rounded-lg"><div class="w-1/2 h-4 bg-slate-400 rounded-full flex items-center"><div class="w-2/5 h-full bg-orange-400 rounded-l-full"></div></div><div class="mt-4 font-semibold text-green-800">✅ 导体光滑 | 长度精确 | 切口平整</div></div>`; } }, causes: ['使用非专业工具（如美工刀）', '剥线钳孔径不匹配或刀片磨损', '操作方法错误（用力过猛、过度旋转）', '未能参照端子规格控制剥线长度'], hazards: ['导体损伤导致局部过热和机械强度降低', '剥线过长增加短路风险', '剥线过短导致接触不良和严重发热'], preventiveMeasures: ['必须使用与线径匹配的专业剥线钳', '精确控制剥线长度（查阅规格书、使用限位装置）', '规范操作，平稳一次完成', '剥线后严格检查，不合格则剪掉重做'], importantNote: '导体上的微小刻痕会形成应力集中点，在振动和温度变化下极易疲劳断裂，是典型的潜伏性故障源。' } ] }, { id: 'chapter2', title: '连接与端接', icon: '🔗', summary: '可靠的连接是电流顺畅流通和系统稳定运行的保障。本章聚焦于连接松动、压接工艺和端子选型。', errors: [ { title: '错误 2.1: 连接松动', description: '导线与接线端子之间的连接不够紧固，或在设备运行后因振动、热胀冷缩等原因发生松动。', bad: { practiceTitle: '错误做法: 紧固力矩不足/凭手感', practiceDesc: '螺钉未按规定力矩拧紧，导致接触电阻增大，连接点异常发热。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex flex-col justify-center items-center p-4 bg-red-50 border-2 border-dashed border-red-200 rounded-lg"><div class="relative w-24 h-24 bg-slate-300 rounded flex justify-center items-end pb-2"><div class="w-10 h-2 bg-white"></div><div class="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-slate-500 rounded-full flex justify-center items-center text-white text-xs transform -rotate-45">+</div><div class="absolute w-4 h-10 bg-orange-400 bottom-4 left-1/2 -translate-x-[150%] rounded-sm"></div><div class="absolute w-4 h-10 bg-red-500 bottom-4 left-1/2 -translate-x-[150%] rounded-sm animate-ping"></div></div><div class="mt-4 font-semibold text-red-700">🔥 异常发热，绝缘老化，火灾隐患</div></div>`; } }, good: { practiceTitle: '正确做法: 使用扭矩工具，确保可靠连接', practiceDesc: '使用扭矩扳手按制造商推荐值紧固，确保接触面清洁，并使用防松措施。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex flex-col justify-center items-center p-4 bg-green-50 border-2 border-dashed border-green-200 rounded-lg"><div class="relative w-24 h-24 bg-slate-300 rounded flex justify-center items-end pb-2"><div class="w-10 h-2 bg-white"></div><div class="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-slate-600 rounded-full flex justify-center items-center text-white text-xs">+</div><div class="absolute w-4 h-10 bg-orange-400 bottom-4 left-1/2 -translate-x-[150%] rounded-sm"></div></div><div class="mt-4 font-semibold text-green-800">✅ 连接紧密，接触良好，运行安全</div></div>`; } }, causes: ['紧固力矩不当', '未使用扭矩工具', '接触面存在油污、氧化层', '机械振动与热胀冷缩', '弹簧式端子选型或插入不当'], hazards: ['接触电阻增大与异常发热（电气火灾主因）', '电压不稳与设备故障', '产生电弧或火花', '信号传输中断或失真'], preventiveMeasures: ['必须使用扭矩工具紧固', '连接前清洁接触面', '在振动环境中使用抗振端子或防松措施', '定期进行红外热像仪巡检'], importantNote: '连接松动会启动一个自我加速的劣化循环：发热 → 氧化/材料蠕变 → 接触电阻更大 → 更热 → 最终失效。' }, { title: '错误 2.2: 不正确的压接', description: '使用压接式端子时，因工具、模具或操作不当导致压接不足（过松）或过度压接（过紧）。', bad: { practiceTitle: '错误做法: 压接过松/过紧', practiceDesc: '使用不匹配的工具导致连接机械强度差、接触电阻大，或损伤导线和端子。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full grid grid-cols-2 gap-4 p-4 text-center text-xs"><div class="p-2 bg-red-50 rounded"><div class="w-16 h-8 mx-auto bg-slate-300 rounded-md flex items-center justify-center"><div class="w-10 h-4 bg-orange-300 rounded-full opacity-70"></div></div><div class="mt-2 font-semibold text-red-700">压接不足 (过松)</div><div class="text-slate-600">易脱出，高电阻</div></div><div class="p-2 bg-red-50 rounded"><div class="w-16 h-8 mx-auto bg-slate-300 rounded-md flex items-center justify-center transform scale-x-90 scale-y-110"><div class="w-8 h-3 bg-red-500 rounded-full"></div></div><div class="mt-2 font-semibold text-red-700">过度压接 (过紧)</div><div class="text-slate-600">损伤导线，端子开裂</div></div></div>`; } }, good: { practiceTitle: '正确做法: 形成密实、均匀的“气密性”连接', practiceDesc: '使用专业匹配的工具，确保压接形成类似冷焊的紧密结合，阻止空气和水分侵入。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex flex-col justify-center items-center p-4 bg-green-50 rounded-lg"><div class="w-16 h-8 mx-auto bg-slate-400 rounded-md flex items-center justify-center"><div class="w-10 h-5 bg-orange-400 rounded-sm"></div></div><div class="mt-4 font-semibold text-green-800">✅ 压接牢固，导电良好，机械强度高</div><div class="text-xs text-green-700 mt-1">（剖面呈均匀六边形，无空隙）</div></div>`; } }, causes: ['压接工具或模具与端子/导线规格不符', '工具损坏或失准', '操作技能不足，未按规程', '导线预处理不当（剥线长度、线芯整理）'], hazards: ['高接触电阻与发热', '机械强度不足，导线易脱出', '损伤导线芯线，降低导电能力', '长期可靠性差，易受环境影响而腐蚀'], preventiveMeasures: ['必须选用制造商推荐的专业压接工具和模具', '定期维护和校准工具', '对操作人员进行专业培训', '进行严格的质量检验（外观、拉力测试、压接高度测量）'], importantNote: '一个高质量的压接应形成“气密性”连接，能有效阻止腐蚀和氧化，确保长期可靠性。仅靠目视检查或导通测试是远远不够的。' } ] }, { id: 'chapter3', title: '布线布局与管理', icon: '🗺️', summary: '合理的布线布局是确保散热、易于维护和电磁兼容性的基础。本章讨论布线路径、弯曲半径和线缆隔离。', errors: [ { title: '错误 3.1: “鸟巢式”布线与不当捆扎', description: '导线布放杂乱无章，随意交叉重叠，未进行有效路径规划和固定，或使用扎带过紧对导线造成损伤。', bad: { practiceTitle: '错误做法: 杂乱无章', practiceDesc: '导线如蜘蛛网般随意散布、交叉缠绕，没有使用线槽进行有效管理。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full p-4 relative bg-red-50 rounded-lg overflow-hidden"><div class="absolute w-px h-full bg-red-200 top-0 left-1/4"></div><div class="absolute w-px h-full bg-blue-200 top-0 left-2/3"></div><div class="absolute w-full h-px bg-yellow-200 top-1/3 left-0"></div><div class="absolute w-full h-px bg-green-200 top-3/4 left-0"></div><div class="absolute w-[80%] h-px bg-red-400 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform rotate-12"></div><div class="absolute w-[80%] h-px bg-blue-400 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform -rotate-20"></div><div class="absolute w-[60%] h-px bg-green-400 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform rotate-45"></div><div class="absolute inset-0 flex justify-center items-center"><div class="text-red-700 font-bold text-lg bg-white/50 backdrop-blur-sm p-2 rounded">维护困难，散热不良，EMI风险高</div></div></div>`; } }, good: { practiceTitle: '正确做法: 使用线槽，整齐有序', practiceDesc: '采用线槽和导轨，强弱电分离，导线走向清晰，横平竖直，并适度捆扎。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full p-4 grid grid-cols-3 gap-4 bg-green-50 rounded-lg"><div class="bg-slate-300 rounded p-2 space-y-2"><div class="w-full h-1.5 bg-red-400 rounded"></div><div class="w-full h-1.5 bg-red-400 rounded"></div><div class="w-full h-1.5 bg-red-400 rounded"></div><div class="text-xs text-center mt-1 text-slate-600">动力线槽</div></div><div class="bg-slate-300 rounded p-2 space-y-2"><div class="w-full h-1 bg-blue-400 rounded"></div><div class="w-full h-1 bg-blue-400 rounded"></div><div class="text-xs text-center mt-1 text-slate-600">控制线槽</div></div><div class="bg-slate-300 rounded p-2 space-y-2"><div class="w-full h-1 bg-green-400 rounded"></div><div class="w-full h-1 bg-green-400 rounded"></div><div class="text-xs text-center mt-1 text-slate-600">信号线槽</div></div></div>`; } }, causes: ['缺乏预先规划', '工期压力牺牲工艺质量', '后期随意增改', '捆扎过紧'], hazards: ['散热不良与局部过热', '绝缘损伤与短路风险', '故障排查与维护极为困难', '电磁干扰（EMI）风险增加'], preventiveMeasures: ['详细规划布线路径', '规范使用线槽与导轨', '严格实行强弱电分离', '合理控制导线长度并适度捆扎'], importantNote: '混乱的布线不仅不美观，更可能反映出项目在规划、工艺标准、时间管理乃至安全文化方面的深层缺陷。' }, { title: '错误 3.2: 不正确的导线弯曲半径', description: '在布线时，导线（尤其电力电缆、数据电缆）在转弯位置的弯曲半径过小，形成“死弯”，导致导线损伤。', bad: { practiceTitle: '错误做法: 强行弯折成锐角', practiceDesc: '为了节省空间或图方便，强行将导线以过小半径弯折，导致绝缘层和导体受损。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex justify-center items-center p-4 bg-red-50 rounded-lg"><div class="w-32 h-32 relative"><div class="absolute w-16 h-4 bg-orange-400 top-0 left-0"></div><div class="absolute w-4 h-16 bg-orange-400 top-0 left-0"></div><div class="absolute top-0 left-0 text-red-600 text-3xl font-bold">💥</div></div><div class="ml-4 text-red-700">损伤绝缘层和导体<br>影响信号质量<br>缩短使用寿命</div></div>`; } }, good: { practiceTitle: '正确做法: 遵循最小弯曲半径要求', practiceDesc: '确保导线以平缓、圆滑的弧度弯曲，其半径不小于制造商或标准规定的最小值。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex justify-center items-center p-4 bg-green-50 rounded-lg"><div class="w-32 h-32 relative"><div class="absolute w-24 h-4 bg-sky-500 top-0 left-0"></div><div class="absolute w-4 h-24 bg-sky-500 top-0 left-20"></div><div class="absolute w-20 h-20 border-4 border-sky-500 rounded-br-full top-0 left-0"></div></div><div class="ml-4 text-green-800">保持性能完好<br>确保电气完整性<br>延长使用寿命</div></div>`; } }, causes: ['柜内空间规划不当', '强行弯折导线', '忽视规范中对最小弯曲半径的要求'], hazards: ['损伤绝缘层与导体，影响导电能力', '对于特种电缆，严重影响信号传输质量', '产生残留机械应力，加速材料老化'], preventiveMeasures: ['遵循制造商或标准规定的最小弯曲半径（通常为电缆外径的4到12倍）', '合理规划布线空间，预留足够转弯余地', '使用弧形导向件等辅助工具'], importantNote: '' } ] }, { id: 'chapter4', title: '接地与等电位联结', icon: '🌍', summary: '正确的接地是保障人身安全和设备正常运行的生命线。本章明确PE、N、FE线的区别与正确连接。', errors: [ { title: '错误 4.1: 不可靠的保护接地(PE)', description: 'PE连接出现松动、腐蚀、线径不足、路径不连续、电阻过大，或标识不规范（非黄绿双色）。', bad: { practiceTitle: '错误做法: 接地连接腐蚀、松动', practiceDesc: '接地排上的PE连接螺钉松脱，接触面有锈迹或氧化层，导致接地电阻过大。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex flex-col justify-center items-center p-4 bg-red-50 rounded-lg"><div class="w-40 h-8 bg-amber-500 rounded flex items-center justify-around"><div class="w-6 h-6 rounded-full border-2 border-red-400 bg-red-200 flex justify-center items-center text-red-700 font-bold">⚡</div><div class="w-6 h-6 rounded-full border-2 border-slate-400 bg-slate-200"></div></div><div class="mt-2 text-red-700 font-semibold">PE连接不可靠，存在间隙/腐蚀</div><div class="mt-2 text-xs text-red-600">危害：设备外壳带电，电击风险！</div></div>`; } }, good: { practiceTitle: '正确做法: 连接紧密，接触良好', practiceDesc: 'PE线使用黄绿双色，用合适的接线片紧固在光洁的接地铜排上，并使用防松措施。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex flex-col justify-center items-center p-4 bg-green-50 rounded-lg"><div class="w-40 h-8 bg-amber-400 rounded flex items-center justify-around"><div class="w-6 h-6 rounded-full border-2 border-green-600 bg-green-300"></div><div class="w-6 h-6 rounded-full border-2 border-green-600 bg-green-300"></div></div><div class="mt-2 text-green-800 font-semibold">所有PE连接紧固、清洁、可靠</div><div class="mt-2 text-xs text-green-700">效果：有效泄放故障电流，保障安全</div></div>`; } }, causes: ['连接件未按力矩拧紧或振动松动', '接触面未清理（油漆、氧化层）', 'PE线径不足或颜色错误', '缺少防松措施', '采用串联接地', '遗漏接地点'], hazards: ['设备外壳带电，有严重电击风险', '影响设备EMC性能', '保护装置可能无法及时动作', '火灾风险'], preventiveMeasures: ['所有PE连接必须按规定力矩紧固并防松', 'PE线必须是黄绿双色，线径符合标准', '采用星形或树干式接地结构，严禁串联', '系统性检查接地连续性和接地电阻'], importantNote: 'IEC 60204-1规定，一个保护导体连接点（如一个孔位）只允许连接一根保护导体。' }, { title: '错误 4.2: 不正确的零地(N-G)连接', description: '在TN-S或TN-C-S系统的主进线点之后，在下游（如子配电盘）错误地将中性线(N)和保护接地线(PE)再次连接。', bad: { practiceTitle: '错误做法: 下游N-PE短接', practiceDesc: '在子配电盘内，用导线将N排和PE排连接在一起。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex flex-col justify-center items-center p-4 bg-red-50 rounded-lg"><div class="text-center font-bold text-red-700 mb-2">子配电盘</div><div class="flex space-x-8"><div class="w-8 h-24 bg-sky-300 rounded"><div class="text-center text-xs">N排</div></div><div class="w-8 h-24 bg-amber-400 rounded"><div class="text-center text-xs">PE排</div></div></div><div class="absolute w-12 h-1 bg-red-600 top-1/2 left-1/2 -translate-x-1/2"></div><div class="mt-2 text-red-600 text-sm font-semibold">❌ 错误连接!</div></div>`; } }, good: { practiceTitle: '正确做法: N线与PE线严格分离', practiceDesc: '在总进线点之后的所有下游电路中，N线和PE线必须是完全独立的系统。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full flex flex-col justify-center items-center p-4 bg-green-50 rounded-lg"><div class="text-center font-bold text-green-800 mb-2">子配电盘</div><div class="flex space-x-8"><div class="w-8 h-24 bg-sky-400 rounded"><div class="text-center text-xs">N排</div></div><div class="w-8 h-24 bg-green-500 rounded"><div class="text-center text-xs">PE排</div></div></div><div class="mt-2 text-green-700 text-sm font-semibold">✅ N线与PE线完全独立</div></div>`; } }, causes: ['对接地系统原理理解不清', '错误地认为多点连接能“增强”接地', '施工疏忽或图纸错误'], hazards: ['PE线上流过正常工作电流，设备外壳带电', '干扰敏感电子设备', '导致RCD/GFCI误动或拒动', '在N线断裂等故障下，PE系统电位可能异常升高'], preventiveMeasures: ['严格遵守规范：N-PE连接仅允许在总进线处一次', 'N线与PE线在下游必须严格分离', '使用标准颜色清晰标识（N-浅蓝/白，PE-黄绿）', '由专业人员进行设计和施工'], importantNote: '' } ] }, { id: 'chapter5', title: '保护装置', icon: '🛡️', summary: '正确选择和配置保护装置是防止过电流损害线路和设备的关键。本章重点讲解熔断器和断路器的选型。', errors: [ { title: '错误 5.1: 保护装置规格或类型不当', description: '为线路或设备选择的熔断器/断路器额定电流过大/过小，或动作特性（脱扣曲线）与负载特性不匹配。', bad: { practiceTitle: '错误做法: 类型不匹配/额定值过大', practiceDesc: '为电机负载选用了瞬时脱扣倍数低的B型断路器，导致正常启动即跳闸。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full p-4 bg-red-50 rounded-lg flex flex-col items-center justify-center text-center"><div class="text-3xl mb-2"> मोटर </div><div class="font-semibold text-red-700">电机负载</div><div class="text-5xl my-2">⚡️</div><div class="p-2 border-2 border-red-500 rounded bg-white"><div class="font-bold">B型断路器</div><div class="text-xs text-red-600">(过于灵敏)</div></div><div class="mt-2 text-red-700 font-bold">结果: 启动即跳闸，无法工作</div></div>`; } }, good: { practiceTitle: '正确做法: 精确匹配负载特性', practiceDesc: '为电机选用D型或K型等具有适当延时特性的断路器，以适应其高启动电流。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full p-4 bg-green-50 rounded-lg flex flex-col items-center justify-center text-center"><div class="text-3xl mb-2"> मोटर </div><div class="font-semibold text-green-800">电机负载</div><div class="text-5xl my-2 text-green-600">🔌</div><div class="p-2 border-2 border-green-600 rounded bg-white"><div class="font-bold">D型/K型断路器</div><div class="text-xs text-green-700">(延时脱扣)</div></div><div class="mt-2 text-green-800 font-bold">结果: 正常启动，可靠保护</div></div>`; } }, causes: ['负载计算不准', '忽视负载特性（如电机启动电流）', '随意替换损坏的保护装置', '错误地通过增大额定值来解决频繁跳闸问题'], hazards: ['保护不足：额定值过大导致过热、火灾', '误动作：额定值过小或类型不当导致频繁跳闸，影响生产', '未能实现选择性保护，扩大停电范围'], preventiveMeasures: ['根据导线载流量和负载特性精确选型', '查阅设备制造商手册和电气规范', '确保分断能力(AIC/SCCR)足够', '频繁跳闸时应先排查故障根源'], importantNote: '频繁跳闸是系统发出的警示信号。简单地增大保护装置额定值是极其危险的错误做法，它掩盖了根本问题，并极大地增加了火灾风险。' }, { title: '附: 断路器脱扣曲线选择', description: '不同类型的断路器有不同的瞬时脱扣电流倍数，适用于不同类型的负载。', isChart: true, chartData: { type: 'bar', data: { labels: ['B型 (3-5倍)', 'C型 (5-10倍)', 'D型 (10-20倍)', 'K型 (10-14倍)', 'Z型 (2-3倍)'], datasets: [{ label: '瞬时脱扣电流 (倍额定电流In)', data: [5, 10, 20, 14, 3], backgroundColor: [ 'rgba(59, 130, 246, 0.7)', 'rgba(16, 185, 129, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(239, 68, 68, 0.7)', 'rgba(139, 92, 246, 0.7)', ], borderColor: [ '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', ], borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: '不同脱扣曲线的瞬时动作范围' }, tooltip: { callbacks: { footer: (tooltipItems) => { const labels = { 'B型 (3-5倍)': '用途: 纯阻性负载，照明，插座。', 'C型 (5-10倍)': '用途: 通用型，常规照明和动力负载。', 'D型 (10-20倍)': '用途: 大冲击电流负载，如电机，变压器。', 'K型 (10-14倍)': '用途: 类似D型，对过载更敏感。', 'Z型 (2-3倍)': '用途: 保护敏感电子设备。', }; return labels[tooltipItems[0].label] || ''; } } } }, scales: { y: { beginAtZero: true, title: {display: true, text: '倍额定电流 (In)'} } } } } } ] }, { id: 'chapter6', title: '相序与极性', icon: '🔄', summary: '正确的相序和极性是确保设备按预期运行和防止损坏的基础。本章讲解三相和直流系统中的常见连接错误。', errors: [ { title: '错误 6.1: 三相系统相序错误', description: '将三相交流电源接入三相设备（特别是电动机）时，未能按照正确的相序进行连接。', bad: { practiceTitle: '错误做法: 任意两相互换', practiceDesc: '电源L1,L2,L3接入电机端子U,W,V，导致电机旋转方向与设计要求相反。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full p-4 flex flex-col justify-center items-center bg-red-50 rounded-lg"><div class="text-4xl animate-spin-reverse">⚙️</div><div class="mt-4 text-red-700 font-bold">电机反转!</div><div class="mt-2 text-xs text-red-600 text-center">危害：设备损坏，工艺错乱，安全事故</div></div>`; } }, good: { practiceTitle: '正确做法: 相序一致', practiceDesc: '电源L1,L2,L3正确接入电机端子U,V,W，确保电机按预期方向旋转。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full p-4 flex flex-col justify-center items-center bg-green-50 rounded-lg"><div class="text-4xl animate-spin">⚙️</div><div class="mt-4 text-green-800 font-bold">电机正转</div><div class="mt-2 text-xs text-green-700 text-center">效果：设备正常运行，满足工艺要求</div></div>`; } }, causes: ['疏忽核对或标识不清', '错误地认为接线顺序无关紧要', '维护或更换后接线失误'], hazards: ['三相电动机反转，导致设备严重损坏或安全事故', '相序敏感设备（如UPS）故障或损坏', '系统并联时产生巨大环流'], preventiveMeasures: ['接线前必须使用相序表核对相序', '严格按图施工与标识', '对重要设备安装相序保护继电器', '首次启动前进行“点动”测试，观察实际转向'], importantNote: '' }, { title: '错误 6.2: 直流系统极性接反', description: '对直流电源与负载接线时，将电源的正极(+)错误地连接到负载的负极端，负极(-)连接到正极端。', bad: { practiceTitle: '错误做法: 正负极反接', practiceDesc: '将红色导线(+)接到负载的(-)端，黑色导线(-)接到(+)端。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full p-4 flex flex-col justify-center items-center bg-red-50 rounded-lg"><div class="text-3xl">💥</div><div class="mt-2 text-red-700 font-bold">元器件烧毁!</div><div class="text-xs text-slate-600 mt-2">电源(+) → <span class="text-red-600 font-bold">负载(-)</span></div><div class="text-xs text-slate-600">电源(-) → <span class="text-red-600 font-bold">负载(+)</span></div><div class="mt-2 text-xs text-red-600">危害: 电解电容爆炸，IC烧毁，火灾风险。</div></div>`; } }, good: { practiceTitle: '正确做法: 极性匹配', practiceDesc: '仔细核对标识，确保正对正(+ to +)，负对负(- to -)连接。', diagram: (el) => { el.innerHTML = `<div class="w-full h-full p-4 flex flex-col justify-center items-center bg-green-50 rounded-lg"><div class="text-3xl text-yellow-400">💡</div><div class="mt-2 text-green-800 font-bold">设备正常工作</div><div class="text-xs text-slate-600 mt-2">电源(+) → <span class="text-green-700 font-bold">负载(+)</span></div><div class="text-xs text-slate-600">电源(-) → <span class="text-green-700 font-bold">负载(-)</span></div><div class="mt-2 text-xs text-green-700">效果: 系统稳定，元器件安全。</div></div>`; } }, causes: ['忽视标识或颜色编码', '粗心大意', '标识不清或误导', '使用无防呆设计的插接件'], hazards: ['电子元器件永久性损坏（特别是电解电容、IC）', '设备不工作或异常', '短路与火灾风险'], preventiveMeasures: ['接线前务必仔细核对极性标识', '遵循导线颜色编码', '优先选用具有防反插机械结构的插接件', '为重要设备加装反极性保护电路'], importantNote: '' } ] } ];
+            
+            const navContainerP1 = document.getElementById('main-nav-P1');
+            const contentContainerP1 = document.getElementById('content-container-P1');
+            if (!navContainerP1 || !contentContainerP1) return;
+
+            navContainerP1.innerHTML = ''; 
+            contentContainerP1.innerHTML = '';
+
+            reportDataP1.forEach((chapter, index) => {
+                const navButtonP1 = document.createElement('button');
+                navButtonP1.id = `nav-${chapter.id}-P1`;
+                navButtonP1.className = `border-b-4 px-1 py-4 transition-colors duration-200 ease-in-out ${index === 0 ? 'nav-active-P1' : 'nav-inactive-P1'}`;
+                navButtonP1.innerHTML = `<span class="mr-1">${chapter.icon}</span> ${chapter.title}`;
+                navButtonP1.onclick = () => switchTabP1(chapter.id);
+                navContainerP1.appendChild(navButtonP1);
+
+                const chapterContentP1 = document.createElement('div');
+                chapterContentP1.id = `content-${chapter.id}-P1`;
+                chapterContentP1.className = `fade-in ${index === 0 ? 'content-active-P1' : 'content-inactive-P1'}`;
+                let errorCardsHTMLP1 = '';
+                chapter.errors.forEach((error, errorIndex) => {
+                    const cardIdP1 = `${chapter.id}-error-${errorIndex}-P1`;
+                    if (error.isChart) {
+                        errorCardsHTMLP1 += `<div class="bg-slate-50 rounded-xl p-6 mt-10"><h3 class="text-xl font-semibold mb-4 text-slate-800 text-center">${error.title}</h3><p class="text-center text-slate-600 mb-4">${error.description}</p><div class="chart-container-P1"><canvas id="${cardIdP1}-chart"></canvas></div></div>`;
+                    } else {
+                         errorCardsHTMLP1 += `<div class="bg-slate-50 rounded-xl p-4 sm:p-6 mb-8"><h3 class="text-xl font-semibold text-slate-800">${error.title}</h3><p class="mt-1 text-slate-600">${error.description}</p>${error.importantNote ? `<div class="mt-3 text-sm bg-amber-100 border-l-4 border-amber-400 text-amber-800 p-3 rounded-r-lg"><strong>重要提示:</strong> ${error.importantNote}</div>` : ''}<div class="mt-4 p-4 border border-slate-200 rounded-lg bg-white"><div class="flex items-center justify-center space-x-2 sm:space-x-4 mb-4 border-b border-slate-200 pb-4"><div id="${cardIdP1}-title" class="flex-grow font-bold text-lg text-center text-slate-700"></div><button id="${cardIdP1}-toggle" class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors bg-red-500" onclick="togglePracticeP1('${cardIdP1}', this)"><span class="sr-only">Toggle Practice</span><span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform translate-x-1"></span></button></div><p id="${cardIdP1}-desc" class="text-sm text-slate-600 mb-4 min-h-[40px]"></p><div id="${cardIdP1}-diagram" class="min-h-[150px] flex items-center justify-center"></div></div><div class="mt-4 grid sm:grid-cols-2 gap-4 text-sm"><details class="bg-white p-3 rounded-lg shadow-sm"><summary class="font-semibold text-slate-700">产生原因</summary><ul class="list-disc list-inside mt-2 text-slate-600 space-y-1">${error.causes.map(c => `<li>${c}</li>`).join('')}</ul></details><details class="bg-white p-3 rounded-lg shadow-sm"><summary class="font-semibold text-slate-700">潜在危害</summary><ul class="list-disc list-inside mt-2 text-slate-600 space-y-1">${error.hazards.map(h => `<li>${h}</li>`).join('')}</ul></details><details class="bg-white p-3 rounded-lg shadow-sm col-span-1 sm:col-span-2"><summary class="font-semibold text-slate-700">预防措施</summary><ul class="list-disc list-inside mt-2 text-slate-600 space-y-1">${error.preventiveMeasures.map(p => `<li>${p}</li>`).join('')}</ul></details></div></div>`;
+                    }
+                });
+                chapterContentP1.innerHTML = `<div class="max-w-4xl mx-auto"><h2 class="text-2xl font-bold mb-2 text-slate-900">${chapter.icon} ${chapter.title}</h2><p class="mb-8 text-slate-600">${chapter.summary}</p>${errorCardsHTMLP1}</div>`;
+                contentContainerP1.appendChild(chapterContentP1);
+            });
+
+            reportDataP1.forEach((chapter) => {
+                chapter.errors.forEach((error, errorIndex) => {
+                    const cardIdP1 = `${chapter.id}-error-${errorIndex}-P1`;
+                    if (error.isChart) {
+                        const ctxP1 = document.getElementById(`${cardIdP1}-chart`)?.getContext('2d');
+                        if(ctxP1) new Chart(ctxP1, error.chartData);
+                    } else {
+                         const toggleButtonP1 = document.getElementById(`${cardIdP1}-toggle`);
+                         if(toggleButtonP1) updatePracticeViewP1(cardIdP1, 'bad', toggleButtonP1);
+                    }
+                });
+            });
+            if (reportDataP1.length > 0) switchTabP1(reportDataP1[0].id);
+        }
+
+        function switchTabP1(tabIdP1) {
+            reportDataP1.forEach(chapter => {
+                const navElP1 = document.getElementById(`nav-${chapter.id}-P1`);
+                const contentElP1 = document.getElementById(`content-${chapter.id}-P1`);
+                if (!navElP1 || !contentElP1) return;
+                const isActiveP1 = chapter.id === tabIdP1;
+                navElP1.classList.toggle('nav-active-P1', isActiveP1); navElP1.classList.toggle('nav-inactive-P1', !isActiveP1);
+                contentElP1.classList.toggle('content-active-P1', isActiveP1); contentElP1.classList.toggle('content-inactive-P1', !isActiveP1);
+                if(isActiveP1) contentElP1.classList.add('fade-in');
+            });
+        }
+        window.togglePracticeP1 = function(cardIdP1, button) { 
+            const isGood = button.classList.contains('bg-green-500');
+            updatePracticeViewP1(cardIdP1, isGood ? 'bad' : 'good', button);
+        }
+
+        function updatePracticeViewP1(cardIdP1, type, button) {
+            const [chapterId, , errorIndexStr] = cardIdP1.split('-');
+            const errorIndex = parseInt(errorIndexStr);
+            const chapterData = reportDataP1.find(c => c.id === chapterId);
+            if (!chapterData || !chapterData.errors[errorIndex]) return;
+            const errorData = chapterData.errors[errorIndex];
+            const practiceData = errorData[type];
+
+            document.getElementById(`${cardIdP1}-title`).textContent = practiceData.practiceTitle;
+            document.getElementById(`${cardIdP1}-desc`).textContent = practiceData.practiceDesc;
+            practiceData.diagram(document.getElementById(`${cardIdP1}-diagram`));
+            
+            const thumb = button.querySelector('span:not(.sr-only)');
+            if (type === 'good') {
+                button.classList.remove('bg-red-500'); button.classList.add('bg-green-500');
+                thumb.style.transform = 'translateX(1.5rem)';
+            } else {
+                button.classList.remove('bg-green-500'); button.classList.add('bg-red-500');
+                thumb.style.transform = 'translateX(0.25rem)';
+            }
+        }
+        
+        // --- Initialization for Page 2 (标识&接地.html) ---
+        function initContentPage2() {
+            const tabsP2 = document.querySelectorAll('#tab-nav-P2 .tab-button-P2');
+            const tabContentsP2 = document.querySelectorAll('#tab-content-container-P2 .tab-content-P2');
+            
+            tabsP2.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.dataset.tab;
+                    tabsP2.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    tabContentsP2.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === target) {
+                            content.classList.add('active');
+                        }
+                    });
+                });
+            });
+            
+            let peWireChartP2;
+            const phaseWireInputP2 = document.getElementById('phase-wire-input-P2');
+            const ctxP2 = document.getElementById('pe-wire-chart-P2')?.getContext('2d');
+            if(!ctxP2 || !phaseWireInputP2) return;
+
+            function calculatePeSizeP2(s) { if (s <= 16) return s; if (s > 16 && s <= 35) return 16; if (s > 35) return s / 2; return 0; }
+            function updateChartP2() {
+                const s = parseFloat(phaseWireInputP2.value) || 0; const peSize = calculatePeSizeP2(s);
+                const chartData = { labels: ['相线 (S)', '保护接地线 (PE)'], datasets: [{ label: '截面积 (mm²)', data: [s, peSize], backgroundColor: [ 'rgba(59, 130, 246, 0.6)', 'rgba(22, 163, 74, 0.6)' ], borderColor: [ 'rgba(59, 130, 246, 1)', 'rgba(22, 163, 74, 1)' ], borderWidth: 1 }] };
+                if (peWireChartP2) { peWireChartP2.data = chartData; peWireChartP2.update(); } 
+                else { peWireChartP2 = new Chart(ctxP2, { type: 'bar', data: chartData, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: '截面积 (mm²)' } } }, plugins: { legend: { display: false }, title: { display: true, text: '相线与PE线截面积对比' }, tooltip: { callbacks: { label: function(context) { return `${context.dataset.label}: ${context.raw} mm²`; } } } } } }); }
+            }
+            phaseWireInputP2.addEventListener('input', updateChartP2); updateChartP2();
+
+            const modalContainerP2 = document.getElementById('modal-container-P2');
+            const modalCloseP2 = document.getElementById('modal-close-P2');
+            const modalTitleP2 = document.getElementById('modal-title-P2');
+            const modalBodyP2 = document.getElementById('modal-body-P2');
+            const hotspotDataP2 = { ventilation: { title: '散热与温湿度控制', content: `<h4>散热设计</h4><ul><li>安装轴流风扇或散热风机，配合温控开关（如≥40℃启动）。</li><li>进风口设置可拆卸防尘网（如G4级），并定期清洁。</li><li>大发热量器件（如变频器）需预留足够散热空间（≥50mm），或单独安装在散热腔内。</li></ul><h4>防潮防凝露</h4><ul><li>潮湿环境加装加热除湿器（如湿度≥75%启动）。</li><li>柜体底部密封，防止冷凝水进入。</li></ul>` }, door: { title: '柜门与结构强度', content: `<h4>防护等级 (IP)</h4><ul><li>根据环境选择，室内干燥建议IP30，粉尘潮湿或户外需IP54或更高。</li></ul><h4>材质与结构</h4><ul><li>采用冷轧钢板（厚度≥1.5mm）或不锈钢，表面喷塑防腐。</li><li>门、侧板加装加强筋，防止变形导致密封失效。</li></ul><h4>接地连续性</h4><ul><li>柜门与主框架之间必须通过铜编织带（截面积≥4mm²）进行可靠接地跨接。</li></ul>` }, components: { title: '内部器件布局与安全', content: `<h4>器件安装间距</h4><ul><li>大电流器件与发热元件需预留散热空间（≥50mm）。</li><li>高低压部件需满足电气间隙与爬电距离要求（如低压回路间隙≥6mm）。</li></ul><h4>抗震与防松</h4><ul><li>重型器件（变压器、滤波器）需用螺栓+弹簧垫片固定。</li><li>导轨、端子排通过模数化安装件锁定。</li></ul><h4>防触电保护</h4><ul><li>端子排等带电区域用绝缘罩壳封闭，或设置开门断电联锁。</li></ul>` }, emc: { title: '电磁兼容 (EMC) 防护', content: `<h4>强弱电隔离</h4><ul><li>动力电缆与信号电缆分开布线（间距≥100mm），或用金属隔板隔离。</li></ul><h4>屏蔽与接地</h4><ul><li>高频信号电缆（如编码器、通讯线）使用双绞屏蔽线，屏蔽层在控制柜侧单端接地。</li><li>变频器等干扰源输出侧可加装滤波器或磁环。</li></ul><h4>抗干扰设计</h4><ul><li>敏感元件（PLC、仪表）远离大电流器件（接触器、继电器）。</li><li>继电器、接触器线圈并联RC吸收回路或续流二极管。</li></ul>` }, cable: { title: '电缆进出线防护', content: `<h4>密封与固定</h4><ul><li>电缆进出口使用格兰头（电缆密封接头）固定和密封，防止潮气、粉尘、昆虫等侵入。</li><li>间隙处可填充防火泥或密封胶。</li></ul><h4>防异物侵入</h4><ul><li>密封措施可有效防止小动物（如老鼠）进入咬坏线缆。</li></ul><h4>导线防护</h4><ul><li>导线与金属部件接触处需用绝缘胶带或波纹管防护，避免磨损漏电。</li></ul>` } };
+            document.querySelectorAll('#contentPage2 .hotspot-P2').forEach(hotspot => { // Ensure querySelector is scoped to Page2
+                hotspot.addEventListener('click', () => {
+                    const id = hotspot.id.replace('hotspot-', '').replace('-P2', '');
+                    if (hotspotDataP2[id]) {
+                        modalTitleP2.textContent = hotspotDataP2[id].title; modalBodyP2.innerHTML = hotspotDataP2[id].content; modalContainerP2.classList.remove('hidden');
+                    }
+                });
+            });
+             if(modalCloseP2) modalCloseP2.addEventListener('click', () => { modalContainerP2.classList.add('hidden'); });
+             if(modalContainerP2) modalContainerP2.addEventListener('click', (e) => { if (e.target === modalContainerP2) { modalContainerP2.classList.add('hidden'); } });
+        }
+
+        // --- Initialization for Page 3 (EMC&散热.html) ---
+        function initContentPage3() {
+            const emcDataP3 = [ { title: '信号线与动力线布线', context: '敏感信号线（如编码器、总线电缆）与动力线（如主电源、变频器输出）在柜内近距离平行敷设，极易导致高频噪声耦合，造成信号畸变或通信失败。', bad: { description: '未屏蔽的敏感信号线与动力电缆被捆扎在一起，平行走线距离很长，没有任何物理隔离。', diagram: (el) => { el.innerHTML = `<div class="relative w-full h-full p-4 flex flex-col justify-center items-center"><div class="absolute top-2 left-2 text-sm text-gray-500">柜内空间</div><div class="w-4/5"><div class="relative mb-2 p-2 bg-red-100 border border-red-300 rounded"><div class="h-2 bg-red-500 rounded" title="动力电缆 (强干扰源)"></div><div class="absolute -bottom-1 text-xs text-red-700">动力电缆</div></div><div class="relative p-2 bg-blue-100 border border-blue-300 rounded"><div class="h-1 bg-blue-500 rounded" title="敏感信号线"></div><div class="absolute -bottom-1 text-xs text-blue-700">信号线</div></div><div class="absolute left-0 top-1/2 -translate-y-1/2 w-full flex justify-center items-center"><span class="text-red-500 font-bold text-3xl animate-pulse">⚡️</span><span class="text-red-500 font-bold text-lg">耦合</span><span class="text-red-500 font-bold text-3xl animate-pulse">⚡️</span></div></div><div class="absolute bottom-2 text-center text-sm font-semibold text-red-600">错误：紧密平行捆扎，强耦合</div></div>`; } }, good: { description: '信号线选用带屏蔽层的电缆，与动力线分别敷设在不同的金属线槽中，或使用金属隔板隔离，保持安全距离（建议>20cm）。', diagram: (el) => { el.innerHTML = `<div class="relative w-full h-full p-4 flex flex-col justify-center items-center"><div class="absolute top-2 left-2 text-sm text-gray-500">柜内空间</div><div class="w-4/5 space-y-8"><div class="relative p-2 bg-gray-200 border border-gray-400 rounded"><div class="h-2 bg-red-400 rounded" title="动力电缆"></div><div class="absolute -bottom-1 text-xs text-gray-700">动力电缆线槽</div></div><div class="relative p-2 bg-gray-200 border border-gray-400 rounded"><div class="h-1 bg-blue-500 rounded-full border-2 border-gray-500" title="屏蔽信号线"></div><div class="absolute -bottom-1 text-xs text-gray-700">信号电缆线槽</div></div></div><div class="absolute bottom-2 text-center text-sm font-semibold text-green-600">正确：物理隔离，有效防护</div></div>`; } } }, { title: 'EMI滤波器安装', context: 'EMI滤波器是抑制传导骚扰的关键。错误的安装会使其失效，甚至引入新的问题。关键在于隔离输入/输出线缆和保证良好接地。', bad: { description: '滤波器的输入端（“脏”线）和输出端（“干净”线）线缆被捆扎在一起，或平行敷设过近，导致高频噪声通过耦合直接“跨越”滤波器。', diagram: (el) => { el.innerHTML = `<div class="relative w-full h-full p-4 flex items-center"><div class="w-1/4 text-center"><div class="font-bold">电网</div><div class="text-red-500">（含噪声）</div></div><div class="w-1/4 text-2xl text-center">→</div><div class="w-1/4 flex flex-col items-center"><div class="p-2 bg-gray-300 rounded mb-1">滤波器</div><div class="text-red-500 text-sm font-bold animate-pulse">⚡️旁路效应</div></div><div class="w-1/4 text-center"><div class="font-bold">柜内负载</div><div class="text-red-500">（受干扰）</div></div><div class="absolute w-1/2 left-1/4 top-[45%] h-1 bg-red-400"></div><div class="absolute w-1/2 left-1/4 top-[55%] h-1 bg-green-400"></div><div class="absolute w-[40%] left-[30%] top-[30%] h-1 bg-red-400 border border-dashed border-red-600 rounded-full transform -rotate-3"></div><div class="absolute bottom-2 text-center w-full text-sm font-semibold text-red-600">错误：输入输出线耦合，滤波器失效</div></div>`; } }, good: { description: '滤波器安装在电源入口处，金属外壳与机柜金属板大面积低阻抗接触。输入和输出线严格分离，接地线短而粗。', diagram: (el) => { el.innerHTML = `<div class="relative w-full h-full p-4 flex items-center"><div class="w-1/4 text-center"><div class="font-bold">电网</div><div class="text-red-500">（含噪声）</div></div><div class="w-1/4 text-2xl text-center">→</div><div class="w-1/4 flex flex-col items-center relative"><div class="p-2 bg-gray-300 rounded mb-1">滤波器</div><div class="w-px h-6 bg-green-600"></div><div class="w-8 h-1 bg-green-600"></div><div class="text-sm text-green-700">良好接地</div></div><div class="w-1/4 text-center"><div class="font-bold">柜内负载</div><div class="text-green-500">（已保护）</div></div><div class="absolute w-[23%] left-[26%] top-[48%] h-1 bg-red-400"></div><div class="absolute w-[23%] right-[26%] top-[48%] h-1 bg-green-400"></div><div class="absolute bottom-2 text-center w-full text-sm font-semibold text-green-600">正确：有效滤波，彻底隔离</div></div>`; } } }, { title: '电缆屏蔽层端接', context: '屏蔽层的有效性极大程度上取决于其端接方式。不正确的端接会使其屏蔽效能大打折扣，甚至完全失效。', bad: { description: '将屏蔽编织层拧成一股“猪尾巴”接地。高频时，这段“尾巴”的电感效应显著，感抗大，严重阻碍高频干扰电流泄放，导致屏蔽失效。', diagram: (el) => { el.innerHTML = `<div class="relative w-full h-full p-4 flex flex-col justify-center items-center"><div class="font-semibold mb-2">“猪尾巴”接地</div><div class="w-2/3 h-4 bg-blue-300 rounded-full border-2 border-gray-400 relative flex items-center"><div class="absolute left-0 w-full h-2 bg-blue-500"></div><div class="absolute right-[-10px] h-8 w-1 bg-gray-600 rounded-full transform rotate-12" style="clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);"></div></div><div class="text-red-500 font-bold mt-4 text-center">⚡️ 高频阻抗大，干扰无法泄放 ⚡️</div><div class="absolute bottom-2 text-center w-full text-sm font-semibold text-red-600">错误：形成天线效应，屏蔽失效</div></div>`; } }, good: { description: '使用专用的EMC电缆格兰头或屏蔽层压接夹，实现360°环形端接，提供围绕电缆屏蔽层的连续、低阻抗连接，确保高频有效性。', diagram: (el) => { el.innerHTML = `<div class="relative w-full h-full p-4 flex flex-col justify-center items-center"><div class="font-semibold mb-2">360°环形端接</div><div class="w-2/3 h-8 bg-gray-300 rounded-md flex items-center justify-center relative"><div class="w-[90%] h-4 bg-blue-300 rounded-full border-2 border-gray-400"><div class="w-full h-full bg-blue-500"></div></div><div class="absolute text-sm text-gray-700 -bottom-5">EMC格兰头/接地夹</div></div><div class="text-green-600 font-bold mt-8 text-center">✅ 低阻抗路径，干扰有效泄放</div><div class="absolute bottom-2 text-center w-full text-sm font-semibold text-green-600">正确：提供最佳高频屏蔽性能</div></div>`; } } } ];
+            const thermalRecommendationsP3 = [ { id: 'naturalP3', name: '自然通风', description: '成本最低，依赖热空气自然对流。', criteria: (h, t, ip) => !ip && h <= 500 && t <= 30, icon: '🌬️' }, { id: 'fanP3', name: '强制风冷 (风扇)', description: '最常用，通过风扇强制对流散热。', criteria: (h, t, ip) => !ip && h <= 2000 && t <= 40, icon: '💨' }, { id: 'exchangerP3', name: '热交换器', description: '柜内外空气隔离，适用于恶劣环境。', criteria: (h, t, ip) => (ip || h > 1500) && t <= 40, icon: '🔄' }, { id: 'acP3', name: '电气柜空调', description: '主动制冷，可使柜内低于环境温度。', criteria: (h, t, ip) => h > 2000 || t > 40, icon: '❄️' } ];
+            
+            const tabEmcP3 = document.getElementById('tab-emc-P3');
+            const tabThermalP3 = document.getElementById('tab-thermal-P3');
+
+            if (tabEmcP3) tabEmcP3.onclick = () => switchTabP3('emc');
+            if (tabThermalP3) tabThermalP3.onclick = () => switchTabP3('thermal');
+
+
+            function switchTabP3(tabNameP3) {
+                const tabsP3 = ['emc', 'thermal'];
+                tabsP3.forEach(tabP3 => {
+                    const tabElP3 = document.getElementById(`tab-${tabP3}-P3`);
+                    const contentElP3 = document.getElementById(`content-${tabP3}-P3`);
+                    if(tabElP3 && contentElP3){
+                        if (tabP3 === tabNameP3) {
+                            tabElP3.classList.remove('tab-inactive-P3'); tabElP3.classList.add('tab-active-P3');
+                            contentElP3.classList.remove('content-inactive-P3'); contentElP3.classList.add('content-active-P3', 'fade-in');
+                        } else {
+                            tabElP3.classList.remove('tab-active-P3'); tabElP3.classList.add('tab-inactive-P3');
+                            contentElP3.classList.remove('content-active-P3', 'fade-in'); contentElP3.classList.add('content-inactive-P3');
+                        }
+                    }
+                });
+            }
+            
+            function createEmcPracticeCardsP3() {
+                const containerP3 = document.getElementById('emc-practice-container-P3');
+                if (!containerP3) return;
+                containerP3.innerHTML = '';
+                emcDataP3.forEach((item, index) => {
+                    const cardIdP3 = `practice-P3-${index}`;
+                    const cardHTMLP3 = `<div class="bg-white rounded-xl shadow-lg overflow-hidden"> <div class="p-6"> <h3 class="text-xl font-bold mb-2 text-gray-800">${item.title}</h3> <p class="text-gray-600 mb-4">${item.context}</p> <div class="flex justify-center space-x-4 mb-4 border-b pb-4"> <button id="${cardIdP3}-bad-btn" class="px-4 py-2 text-sm font-medium rounded-md text-red-700 bg-red-100">常见错误 ❌</button> <button id="${cardIdP3}-good-btn" class="px-4 py-2 text-sm font-medium rounded-md text-gray-500 bg-gray-100">推荐做法 ✅</button> </div> <div id="${cardIdP3}-content" class="practice-card-P3"> <p id="${cardIdP3}-description" class="text-sm text-gray-700 mb-4 min-h-[40px]"></p> <div id="${cardIdP3}-diagram" class="practice-diagram-P3 bg-red-50 rounded-lg p-2"></div> </div> </div> </div>`;
+                    containerP3.innerHTML += cardHTMLP3;
+                    document.getElementById(`${cardIdP3}-bad-btn`).onclick = () => togglePracticeP3(cardIdP3, 'bad');
+                    document.getElementById(`${cardIdP3}-good-btn`).onclick = () => togglePracticeP3(cardIdP3, 'good');
+                });
+                emcDataP3.forEach((_, index) => { togglePracticeP3(`practice-P3-${index}`, 'bad'); });
+            }
+
+            window.togglePracticeP3 = function(cardIdP3, type) { // Ensure it's globally accessible for onclick
+                const descElP3 = document.getElementById(`${cardIdP3}-description`);
+                const diagramElP3 = document.getElementById(`${cardIdP3}-diagram`);
+                const badBtnP3 = document.getElementById(`${cardIdP3}-bad-btn`);
+                const goodBtnP3 = document.getElementById(`${cardIdP3}-good-btn`);
+                const index = parseInt(cardIdP3.split('-')[2]);
+                const dataP3 = emcDataP3[index][type];
+
+                descElP3.textContent = dataP3.description; dataP3.diagram(diagramElP3);
+                if (type === 'bad') {
+                    diagramElP3.classList.remove('bg-green-50'); diagramElP3.classList.add('bg-red-50');
+                    badBtnP3.classList.remove('text-gray-500', 'bg-gray-100'); badBtnP3.classList.add('text-red-700', 'bg-red-100');
+                    goodBtnP3.classList.remove('text-green-700', 'bg-green-100'); goodBtnP3.classList.add('text-gray-500', 'bg-gray-100');
+                } else {
+                    diagramElP3.classList.remove('bg-red-50'); diagramElP3.classList.add('bg-green-50');
+                    goodBtnP3.classList.remove('text-gray-500', 'bg-gray-100'); goodBtnP3.classList.add('text-green-700', 'bg-green-100');
+                    badBtnP3.classList.remove('text-red-700', 'bg-red-100'); badBtnP3.classList.add('text-gray-500', 'bg-gray-100');
+                }
+            }
+
+            function setupThermalSelectorP3() {
+                const heatLoadSliderP3 = document.getElementById('heatLoadP3');
+                const ambientTempSliderP3 = document.getElementById('ambientTempP3');
+                const ipProtectionSwitchP3 = document.getElementById('ipProtectionP3');
+                if (!heatLoadSliderP3) return;
+
+                const heatLoadValueP3 = document.getElementById('heatLoadValueP3');
+                const ambientTempValueP3 = document.getElementById('ambientTempValueP3');
+                const ipProtectionValueP3 = document.getElementById('ipProtectionValueP3');
+                const containerP3 = document.getElementById('thermal-recommendation-container-P3');
+                containerP3.innerHTML = '';
+
+                thermalRecommendationsP3.forEach(item => {
+                    const cardHTMLP3 = `<div id="rec-${item.id}" class="p-4 rounded-lg border-2 transition-all duration-300"><div class="text-4xl text-center mb-2">${item.icon}</div><h4 class="font-bold text-center text-lg">${item.name}</h4><p class="text-sm text-center text-gray-600">${item.description}</p></div>`;
+                    containerP3.innerHTML += cardHTMLP3;
+                });
+
+                function updateRecommendationsP3() {
+                    const h = parseInt(heatLoadSliderP3.value); const t = parseInt(ambientTempSliderP3.value); const ip = ipProtectionSwitchP3.checked;
+                    heatLoadValueP3.textContent = h; ambientTempValueP3.textContent = t; ipProtectionValueP3.textContent = ip ? '是' : '否';
+                    let recommendedFound = false;
+                    thermalRecommendationsP3.slice().reverse().forEach(item => {
+                        const card = document.getElementById(`rec-${item.id}`);
+                        if (!recommendedFound && item.criteria(h, t, ip)) {
+                            card.classList.remove('bg-white', 'border-gray-200', 'opacity-50'); card.classList.add('bg-blue-50', 'border-blue-500', 'shadow-lg', 'scale-105'); recommendedFound = true;
+                        } else {
+                            card.classList.remove('bg-blue-50', 'border-blue-500', 'shadow-lg', 'scale-105'); card.classList.add('bg-white', 'border-gray-200', 'opacity-50');
+                        }
+                    });
+                }
+                heatLoadSliderP3.addEventListener('input', updateRecommendationsP3);
+                ambientTempSliderP3.addEventListener('input', updateRecommendationsP3);
+                ipProtectionSwitchP3.addEventListener('change', updateRecommendationsP3);
+                updateRecommendationsP3();
+            }
+
+            function createEmcChartP3() {
+                const ctxP3 = document.getElementById('emcIssuesChartP3')?.getContext('2d');
+                if (!ctxP3) return;
+                new Chart(ctxP3, { type: 'doughnut', data: { labels: ['辐射骚扰', '传导骚扰', '易感性/抗扰度不足'], datasets: [{ label: 'EMC问题分布', data: [35, 45, 20], backgroundColor: ['rgba(59, 130, 246, 0.7)', 'rgba(16, 185, 129, 0.7)', 'rgba(245, 158, 11, 0.7)'], borderColor: ['#3B82F6', '#10B981', '#F59E0B'], borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', }, title: { display: false } } } });
+            }
+            
+            function createCoolingChartP3() {
+                const ctxP3 = document.getElementById('coolingMethodsChartP3')?.getContext('2d');
+                if (!ctxP3) return;
+                new Chart(ctxP3, { type: 'bar', data: { labels: ['自然通风', '强制风冷', '热交换器', '空调'], datasets: [ { label: '初始成本', data: [1, 2, 5, 10], backgroundColor: 'rgba(156, 163, 175, 0.7)', borderColor: '#6B7280', borderWidth: 1 }, { label: '散热效率', data: [2, 5, 7, 10], backgroundColor: 'rgba(59, 130, 246, 0.7)', borderColor: '#3B82F6', borderWidth: 1 }, { label: '维护复杂度', data: [1, 3, 4, 6], backgroundColor: 'rgba(239, 68, 68, 0.7)', borderColor: '#EF4444', borderWidth: 1 } ] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, title: { display: true, text: '相对指数 (越高代表成本/效率/复杂度越高)' } } }, plugins: { legend: { position: 'top', }, tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.x !== null) { label += context.parsed.x + ' (相对值)'; } return label; } } } } } });
+            }
+            
+            switchTabP3('emc'); createEmcPracticeCardsP3(); setupThermalSelectorP3(); createEmcChartP3(); createCoolingChartP3();
+        }
+
+        // Initial tab load
+        switchToMainTab('contentPage1'); 
+    </script>
+</body>
+</html>
