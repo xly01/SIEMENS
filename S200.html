@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SINAMICS S200 交互式选型指南 13372509117</title>
+    <title>SINAMICS S200 交互式选型指南</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Warm Neutrals -->
@@ -38,288 +38,552 @@
             transform: translateY(-5px);
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
+        .cable-option-btn-active {
+            background-color: #0f766e; /* Teal-700 */
+            color: white;
+        }
+        /* Style for the watermark containers */
+        .watermark-container {
+            position: fixed;
+            width: 220px;
+            z-index: 1000;
+            pointer-events: none;
+            text-align: center;
+        }
+        .siemens-logo-text {
+            font-size: 28px;
+            font-weight: 700; /* bold */
+            color: #009999; /* Official Siemens Teal Color */
+            line-height: 1;
+            opacity: 0.6;
+        }
+        .watermark-text {
+            font-size: 11px;
+            color: #57534e; /* stone-600 */
+            opacity: 0.7;
+            margin-top: 8px;
+            line-height: 1.3;
+            word-wrap: break-word;
+        }
+        .top-right {
+            top: 25px;
+            right: 25px;
+        }
+        .bottom-right {
+            bottom: 25px;
+            right: 25px;
+        }
+        /* Hide the watermarks on small screens */
+        @media (max-width: 1024px) {
+            .watermark-container {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body class="bg-stone-100 text-stone-800">
+
+    <!-- Watermark Logo and Text Container -->
+    <div class="watermark-container top-right">
+        <p class="siemens-logo-text">SIEMENS</p>
+        <p class="watermark-text">制作:谢礼阳 HZ OEM Sales 13372509117</p>
+    </div>
+    <div class="watermark-container bottom-right">
+        <p class="siemens-logo-text">SIEMENS</p>
+        <p class="watermark-text">制作:谢礼阳 HZ OEM Sales 13372509117</p>
+    </div>
 
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
         
         <header class="text-center mb-8">
             <h1 class="text-3xl sm:text-4xl font-bold text-teal-700">SINAMICS S200 交互式选型指南</h1>
-            <p class="mt-2 text-lg text-stone-600">https://mall.industry.siemens.com/spice/cloudcm/configurator</p>
+            <p class="mt-2 text-lg text-stone-600">快速筛选最合适的伺服系统组合，非官方软件，结果仅供参考。</p>
         </header>
 
         <main>
-            <div id="controls" class="bg-white p-6 rounded-xl shadow-md mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <h3 class="font-semibold mb-3 text-lg">1. 选择负载惯量</h3>
-                        <div id="inertia-selector" class="flex flex-wrap gap-2">
-                            <button data-value="all" class="control-btn control-btn-active w-full sm:w-auto flex-grow px-4 py-2 bg-stone-200 rounded-lg">全部</button>
-                            <button data-value="low" class="control-btn w-full sm:w-auto flex-grow px-4 py-2 bg-stone-200 rounded-lg">低惯量</button>
-                            <button data-value="medium" class="control-btn w-full sm:w-auto flex-grow px-4 py-2 bg-stone-200 rounded-lg">中惯量</button>
-                            <button data-value="high" class="control-btn w-full sm:w-auto flex-grow px-4 py-2 bg-stone-200 rounded-lg">高惯量</button>
+            <div id="controls-wrapper" class="relative bg-white p-6 rounded-xl shadow-md mb-8">
+                <button id="reset-button" class="absolute top-4 right-4 bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors">
+                    &#x21BA; 快捷复位
+                </button>
+                <div id="controls" class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
+                    <!-- Left Side: Application and Drive Options -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                         <!-- Column 1: Application Requirements -->
+                        <div>
+                            <h3 class="font-semibold mb-3 text-lg">1. 关键应用需求</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-sm font-medium text-stone-700">负载惯量</label>
+                                    <div id="inertia-selector" class="flex flex-wrap gap-2 mt-1">
+                                        <button data-value="all" class="control-btn control-btn-active flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">全部</button>
+                                        <button data-value="low" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">低惯量</button>
+                                        <button data-value="medium" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">中惯量</button>
+                                        <button data-value="high" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">高惯量</button>
+                                    </div>
+                                </div>
+                                 <div>
+                                    <label class="text-sm font-medium text-stone-700">电源电压</label>
+                                    <div id="voltage-selector" class="flex flex-wrap gap-2 mt-1">
+                                        <button data-value="all" class="control-btn control-btn-active flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">全部</button>
+                                        <button data-value="200V" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">1/3AC 200V</button>
+                                        <button data-value="400V" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">3AC 400V</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="power-slider" class="text-sm font-medium text-stone-700">额定功率 (kW)</label>
+                                    <div class="flex items-center gap-4 mt-1">
+                                        <input id="power-slider" type="range" min="0" value="0" step="1" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer">
+                                        <span id="power-value" class="font-bold text-teal-700 w-24 text-center">≥ 0.0 kW</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-sm text-stone-500 mt-2">高动态响应选“低惯量”，大负载平稳运行选“高惯量”。</p>
+                         <!-- Column 2: Drive Options -->
+                        <div>
+                            <h3 class="font-semibold mb-3 text-lg">3. 驱动器选项</h3>
+                             <div class="space-y-4">
+                               <div>
+                                    <label class="text-sm font-medium text-stone-700">通讯类型</label>
+                                    <div id="comms-selector" class="flex flex-wrap gap-2 mt-1">
+                                        <button data-value="all" class="control-btn control-btn-active flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">全部</button>
+                                        <button data-value="PN" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">PROFINET</button>
+                                        <button data-value="PTI" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">脉冲(PTI)</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-stone-700">驱动器版本</label>
+                                    <div id="drivetype-selector" class="flex flex-wrap gap-2 mt-1">
+                                        <button data-value="all" class="control-btn control-btn-active flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">全部</button>
+                                        <button data-value="standard" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">标准版</button>
+                                        <button data-value="basic" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">经济版</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="font-semibold mb-3 text-lg">2. 选择电源电压</h3>
-                        <div id="voltage-selector" class="flex flex-wrap gap-2">
-                            <button data-value="all" class="control-btn control-btn-active w-full sm:w-auto flex-grow px-4 py-2 bg-stone-200 rounded-lg">全部</button>
-                            <button data-value="200V" class="control-btn w-full sm:w-auto flex-grow px-4 py-2 bg-stone-200 rounded-lg">1/3AC 200-240V</button>
-                            <button data-value="400V" class="control-btn w-full sm:w-auto flex-grow px-4 py-2 bg-stone-200 rounded-lg">3AC 380-480V</button>
+                     <!-- Right Side: Motor Options -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                        <!-- Column 3: Motor Options -->
+                        <div>
+                            <h3 class="font-semibold mb-3 text-lg">2. 电机详细选项</h3>
+                            <div class="space-y-4">
+                               <div>
+                                    <label class="text-sm font-medium text-stone-700">抱闸</label>
+                                    <div id="brake-selector" class="flex flex-wrap gap-2 mt-1">
+                                        <button data-value="all" class="control-btn control-btn-active flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">全部</button>
+                                        <button data-value="0" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">无抱闸</button>
+                                        <button data-value="1" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">带抱闸</button>
+                                    </div>
+                                </div>
+                                 <div>
+                                    <label class="text-sm font-medium text-stone-700">编码器类型</label>
+                                    <div id="encoder-selector" class="flex flex-wrap gap-2 mt-1">
+                                        <button data-value="all" class="control-btn control-btn-active flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">全部</button>
+                                        <button data-value="H" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">17位</button>
+                                        <button data-value="S" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">21位</button>
+                                        <button data-value="M" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">21位+多圈</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                         <p class="text-sm text-stone-500 mt-2">根据您的现场供电条件选择。</p>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold mb-3 text-lg">3. 选择电机额定功率 (kW)</h3>
-                        <div class="flex items-center gap-4">
-                            <input id="power-slider" type="range" min="0" value="0" step="1" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer">
-                            <span id="power-value" class="font-bold text-teal-700 w-24 text-center">≥ 0.0 kW</span>
+                        <!-- Column 4: More Motor Options -->
+                        <div>
+                             <h3 class="font-semibold mb-3 text-lg text-white select-none">.</h3> <!-- Spacer for alignment -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-sm font-medium text-stone-700">防护等级 (IP)</label>
+                                    <div id="ip-selector" class="flex flex-wrap gap-2 mt-1">
+                                        <button data-value="all" class="control-btn control-btn-active flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">全部</button>
+                                        <button data-value="1" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">IP65</button>
+                                        <button data-value="0" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">IP54</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-stone-700">轴伸类型</label>
+                                    <div id="shaft-selector" class="flex flex-wrap gap-2 mt-1">
+                                        <button data-value="all" class="control-btn control-btn-active flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">全部</button>
+                                        <button data-value="1" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">带键槽</button>
+                                        <button data-value="0" class="control-btn flex-grow px-3 py-1.5 text-sm bg-stone-200 rounded-lg">光轴</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-sm text-stone-500 mt-2">筛选出额定功率大于等于选定值的电机。</p>
                     </div>
                 </div>
             </div>
             
-            <div id="chart-section" class="mb-8 hidden bg-white p-4 rounded-xl shadow-lg">
-                <h2 id="chart-title" class="text-2xl font-bold text-center mb-4"></h2>
+            <div id="details-section" class="mb-8 hidden bg-white p-6 rounded-xl shadow-lg">
+                <h2 id="details-title" class="text-2xl font-bold text-center mb-4"></h2>
                 <div class="chart-container">
                     <canvas id="torque-speed-chart"></canvas>
                 </div>
                 <p class="text-center text-sm text-stone-500 mt-4">此图表展示了所选电机在不同供电电压下的S1（连续工作）和Mmax（最大转矩）特性。</p>
+                <div id="cable-selection-area" class="mt-8 border-t pt-6">
+                </div>
             </div>
 
             <div id="results-count" class="mb-4 text-lg font-semibold"></div>
-            
-            <div id="results" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            </div>
-
+            <div id="results" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
         </main>
         
         <footer class="text-center mt-12 py-6 border-t border-stone-300">
-             <p class="text-stone-600">本工具根据《S200伺服驱动器选型手册 V2023/08》制作，旨在提供快速参考，西门子谢礼阳13372509117。</p>
+             <p class="text-stone-600">本工具根据《S200伺服驱动器选型手册 V2023/11》制作，旨在提供快速参考。</p>
              <p class="text-sm text-stone-500 mt-1">最终选型结果请务必使用 <a href="https://www.siemens.com/tia-selection-tool" target="_blank" class="text-teal-600 hover:underline">TIA Selection Tool</a> 等官方工具进行校验。</p>
         </footer>
-
     </div>
 
     <script>
+        // Data source updated based on S200 Profinet & PTI price lists and S200 Catalog.
+        // This array now contains all motor and drive combinations from the provided documents.
         const systemsData = [
-            { inertia: 'low', voltage: '200V', motor: { orderNo: '1FL2103-4AG..', power: 0.40, torque: 1.27, axisHeight: 30, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000, 6500], s1_200: [1.27, 1.27, 1.27, 1.2, 0.95, 0.7, 0.45, 0.3], m_max_200: [4.45, 4.45, 4.45, 4.45, 3.5, 2.6, 1.7, 1.4] } }, drive: { orderNo: '6SL5510-1BB10-4AF0', frameSize: 'FSB', type: 'Standard' } },
-            { inertia: 'low', voltage: '400V', motor: { orderNo: '1FL2103-4AF..', power: 0.40, torque: 1.27, axisHeight: 30, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000, 6500], s1_400: [1.27, 1.27, 1.27, 1.2, 0.95, 0.7, 0.45, 0.3], m_max_400: [4.45, 4.45, 4.45, 2.8, 2.3, 1.9, 1.6, 1.4] } }, drive: { orderNo: '6SL5510-1BE10-4AF0', frameSize: 'FSA', type: 'Standard' } },
-            { inertia: 'low', voltage: '400V', motor: { orderNo: '1FL2104-2AF..', power: 0.75, torque: 2.4, axisHeight: 40, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000, 6500], s1_400: [2.4, 2.4, 2.4, 2.3, 1.8, 1.4, 1.0, 0.8], m_max_400: [8, 8, 8, 8, 6.5, 5, 3.8, 3.2] } }, drive: { orderNo: '6SL5510-1BE10-8AF0', frameSize: 'FSB', type: 'Standard' } },
-            { inertia: 'low', voltage: '400V', motor: { orderNo: '1FL2105-4AF..', power: 2.10, torque: 6.6, axisHeight: 52, chartData: { labels: [0, 1000, 2000, 2800, 4000, 5000, 6000], s1_400: [8.5, 8.5, 8.4, 7.5, 5.5, 3.5, 1.0], m_max_400: [25.3, 25.3, 25.3, 25.3, 19, 14.5, 11] } }, drive: { orderNo: '6SL5510-1BE12-5AF0', frameSize: 'FSC', type: 'Standard' } },
+            // =================================================================================
+            // 200V - Low Inertia Motors
+            // =================================================================================
+            { inertia: 'low', voltage: '200V', motor: { base: '1FL2102-2AG', price: { H00: 1632, H10: 3050, H01: 1788, H11: 3199, S00: 2712, S10: 4132, S01: 2872, S11: 4285, M00: 3581, M10: 4990, M01: 3748, M11: 5148 }, power: 0.05, torque: 0.16, axisHeight: 20, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_200: [0.16, 0.16, 0.16, 0.16, 0.12, 0.09, 0.06], m_max_200: [0.56, 0.56, 0.56, 0.56, 0.45, 0.35, 0.25] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BB10-1AA0', pn: '6SL5510-1BB10-1AF0', basic_pti: '6SL5610-1BB10-1AA0', basic_pn: '6SL5610-1BB10-1AF0', frameSize: 'FSA', price_pti: 3063, price_pn: 3976, price_basic_pti: 2784, price_basic_pn: 3614, power: 0.1 } },
+            { inertia: 'low', voltage: '200V', motor: { base: '1FL2102-4AG', price: { H00: 1739, H10: 3177, H01: 1895, H11: 3327, S00: 2820, S10: 4256, S01: 2980, S11: 4410, M00: 3684, M10: 5093, M01: 3851, M11: 5252 }, power: 0.1, torque: 0.32, axisHeight: 20, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_200: [0.32, 0.32, 0.32, 0.32, 0.25, 0.18, 0.12], m_max_200: [1.12, 1.12, 1.12, 1.12, 0.9, 0.7, 0.5] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BB10-1AA0', pn: '6SL5510-1BB10-1AF0', basic_pti: '6SL5610-1BB10-1AA0', basic_pn: '6SL5610-1BB10-1AF0', frameSize: 'FSA', price_pti: 3063, price_pn: 3976, price_basic_pti: 2784, price_basic_pn: 3614, power: 0.1 } },
+            { inertia: 'low', voltage: '200V', motor: { base: '1FL2103-2AG', price: { H00: 1761, H10: 3243, H01: 1917, H11: 3396, S00: 2841, S10: 4325, S01: 3000, S11: 4481, M00: 3705, M10: 5117, M01: 3873, M11: 5276 }, power: 0.2, torque: 0.64, axisHeight: 30, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_200: [0.64, 0.64, 0.64, 0.6, 0.45, 0.3, 0.15], m_max_200: [2.24, 2.24, 2.24, 2.24, 1.8, 1.4, 1.0] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BB10-2AA0', pn: '6SL5510-1BB10-2AF0', basic_pti: '6SL5610-1BB10-2AA0', basic_pn: '6SL5610-1BB10-2AF0', frameSize: 'FSA', price_pti: 3148, price_pn: 4061, price_basic_pti: 2862, price_basic_pn: 3692, power: 0.2 } },
+            { inertia: 'low', voltage: '200V', motor: { base: '1FL2103-4AG', price: { H00: 1871, H10: 3310, H01: 2028, H11: 3460, S00: 2949, S10: 4390, S01: 3108, S11: 4544, M00: 3813, M10: 5222, M01: 3981, M11: 5382 }, power: 0.4, torque: 1.27, axisHeight: 30, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000, 6500], s1_200: [1.27, 1.27, 1.27, 1.2, 0.95, 0.7, 0.45, 0.3], m_max_200: [4.45, 4.45, 4.45, 4.45, 3.5, 2.6, 1.7, 1.4] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BB10-4AA0', pn: '6SL5510-1BB10-4AF0', basic_pti: '6SL5610-1BB10-4AA0', basic_pn: '6SL5610-1BB10-4AF0', frameSize: 'FSB', price_pti: 3234, price_pn: 4149, price_basic_pti: 2940, price_basic_pn: 3772, power: 0.4 } },
+            { inertia: 'low', voltage: '200V', motor: { base: '1FL2104-2AG', price: { H00: 2340, H10: 3938, H01: 2497, H11: 4086, S00: 3419, S10: 5019, S01: 3578, S11: 5171, M00: 4345, M10: 5990, M01: 4513, M11: 6150 }, power: 0.75, torque: 2.4, axisHeight: 40, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_200: [2.4, 2.4, 2.4, 2.3, 1.8, 1.3, 0.8], m_max_200: [8, 8, 8, 8, 6.5, 5, 4] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BB10-8AA0', pn: '6SL5510-1BB10-8AF0', basic_pti: '6SL5610-1BB10-8AA0', basic_pn: '6SL5610-1BB10-8AF0', frameSize: 'FSC', price_pti: 3940, price_pn: 4850, price_basic_pti: 3582, price_basic_pn: 4409, power: 0.75 } },
+            { inertia: 'low', voltage: '200V', motor: { base: '1FL2104-4AG', price: { H00: 3486, H10: 5319, H01: 3643, H11: 5476, S00: 4565, S10: 6400, S01: 4724, S11: 6559, M00: 6107, M10: 7752, M01: 6275, M11: 7912 }, power: 1.0, torque: 3.2, axisHeight: 40, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_200: [3.2, 3.2, 3.2, 2.8, 2.2, 1.6, 1.0], m_max_200: [10.8, 10.8, 10.8, 8, 6, 4.5, 3] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BB11-0AA0', pn: '6SL5510-1BB11-0AF0', basic_pti: '6SL5610-1BB11-0AA0', basic_pn: '6SL5610-1BB11-0AF0', frameSize: 'FSC', price_pti: 4832, price_pn: 5729, price_basic_pti: 4393, price_basic_pn: 5208, power: 1.0 } },
             
-            { inertia: 'medium', voltage: '200V', motor: { orderNo: '1FL2203-4AG..', power: 0.40, torque: 1.27, axisHeight: 30, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000, 6500], s1_200: [1.27, 1.27, 1.27, 1.2, 0.9, 0.65, 0.4, 0.25], m_max_200: [4.45, 4.45, 4.45, 4.45, 3.6, 2.8, 2.0, 1.7] } }, drive: { orderNo: '6SL5510-1BB10-4AF0', frameSize: 'FSB', type: 'Standard' } },
-            { inertia: 'medium', voltage: '400V', motor: { orderNo: '1FL2204-4AF..', power: 1.00, torque: 3.2, axisHeight: 40, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000, 6500], s1_400: [3.2, 3.2, 3.1, 2.9, 2.4, 1.8, 1.2, 1.0], m_max_400: [10, 10, 10, 10, 9.5, 8, 6.5, 5.8] } }, drive: { orderNo: '6SL5510-1BE11-0AF0', frameSize: 'FSB', type: 'Standard' } },
-            { inertia: 'medium', voltage: '400V', motor: { orderNo: '1FL2205-4AF..', power: 1.45, torque: 4.6, axisHeight: 48, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_400: [6, 6, 5.8, 5.2, 4.0, 2.8, 1.5], m_max_400: [19.3, 19.3, 19.3, 19.3, 16, 13, 11] } }, drive: { orderNo: '6SL5510-1BE11-5AF0', frameSize: 'FSC', type: 'Standard' } },
+            // =================================================================================
+            // 200V - Medium Inertia Motors
+            // =================================================================================
+            { inertia: 'medium', voltage: '200V', motor: { base: '1FL2203-2AG', price: { H00: 1761, H10: 3243, H01: 1917, H11: 3396, S00: 2841, S10: 4325, S01: 3000, S11: 4481, M00: 3705, M10: 5117, M01: 3873, M11: 5276 }, power: 0.2, torque: 0.64, axisHeight: 30, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 6000], s1_200: [0.64, 0.64, 0.64, 0.64, 0.5, 0.25], m_max_200: [2.24, 2.24, 2.24, 2.24, 1.8, 1.2] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BB10-2AA0', pn: '6SL5510-1BB10-2AF0', basic_pti: '6SL5610-1BB10-2AA0', basic_pn: '6SL5610-1BB10-2AF0', frameSize: 'FSA', price_pti: 3148, price_pn: 4061, price_basic_pti: 2862, price_basic_pn: 3692, power: 0.2 } },
+            { inertia: 'medium', voltage: '200V', motor: { base: '1FL2203-4AG', price: { H00: 1871, H10: 3310, H01: 2028, H11: 3460, S00: 2949, S10: 4390, S01: 3108, S11: 4544, M00: 3813, M10: 5222, M01: 3981, M11: 5382 }, power: 0.4, torque: 1.27, axisHeight: 30, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 6000], s1_200: [1.27, 1.27, 1.27, 1.27, 0.9, 0.4], m_max_200: [4.45, 4.45, 4.45, 4.45, 3.5, 2.2] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BB10-4AA0', pn: '6SL5510-1BB10-4AF0', basic_pti: '6SL5610-1BB10-4AA0', basic_pn: '6SL5610-1BB10-4AF0', frameSize: 'FSB', price_pti: 3234, price_pn: 4149, price_basic_pti: 2940, price_basic_pn: 3772, power: 0.4 } },
+            { inertia: 'medium', voltage: '200V', motor: { base: '1FL2204-2AG', price: { H00: 2340, H10: 3938, H01: 2497, H11: 4086, S00: 3419, S10: 5019, S01: 3578, S11: 5171, M00: 4345, M10: 5990, M01: 4513, M11: 6150 }, power: 0.75, torque: 2.4, axisHeight: 40, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 6000], s1_200: [2.4, 2.4, 2.4, 2.4, 1.8, 0.8], m_max_200: [7.5, 7.5, 7.5, 7.5, 5.8, 3.8] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BB10-8AA0', pn: '6SL5510-1BB10-8AF0', basic_pti: '6SL5610-1BB10-8AA0', basic_pn: '6SL5610-1BB10-8AF0', frameSize: 'FSC', price_pti: 3940, price_pn: 4850, price_basic_pti: 3582, price_basic_pn: 4409, power: 0.75 } },
+            { inertia: 'medium', voltage: '200V', motor: { base: '1FL2204-4AG', price: { H00: 3486, H10: 5319, H01: 3643, H11: 5476, S00: 4565, S10: 6400, S01: 4724, S11: 6559, M00: 6107, M10: 7752, M01: 6275, M11: 7912 }, power: 1.0, torque: 3.2, axisHeight: 40, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 6000], s1_200: [3.2, 3.2, 3.2, 3.2, 2.4, 1.0], m_max_200: [11.3, 11.3, 11.3, 11.3, 8.5, 5.5] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BB11-0AA0', pn: '6SL5510-1BB11-0AF0', basic_pti: '6SL5610-1BB11-0AA0', basic_pn: '6SL5610-1BB11-0AF0', frameSize: 'FSC', price_pti: 4832, price_pn: 5729, price_basic_pti: 4393, price_basic_pn: 5208, power: 1.0 } },
+            
+            // =================================================================================
+            // 400V - Low Inertia Motors
+            // =================================================================================
+            { inertia: 'low', voltage: '400V', motor: { base: '1FL2102-2AF', price: { H00: 1795, H10: 3355, H01: 1962, H11: 3517, S00: 2984, S10: 4545, S01: 3154, S11: 4710, M00: 3939, M10: 5489, M01: 4117, M11: 5660 }, power: 0.05, torque: 0.16, axisHeight: 20, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 6000], s1_400: [0.16, 0.16, 0.16, 0.16, 0.14, 0.1], m_max_400: [0.56, 0.56, 0.56, 0.56, 0.56, 0.45] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BE10-2AA0', pn: '6SL5510-1BE10-2AF0', basic_pti: null, basic_pn: null, frameSize: 'FSA', price_pti: 3151, price_pn: 4110, price_basic_pti: null, price_basic_pn: null, power: 0.2 } },
+            { inertia: 'low', voltage: '400V', motor: { base: '1FL2102-4AF', price: { H00: 1912, H10: 3495, H01: 2079, H11: 3657, S00: 3102, S10: 4682, S01: 3273, S11: 4848, M00: 4052, M10: 5602, M01: 4231, M11: 5774 }, power: 0.1, torque: 0.32, axisHeight: 20, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 6000], s1_400: [0.32, 0.32, 0.32, 0.32, 0.25, 0.15], m_max_400: [1.12, 1.12, 1.12, 1.12, 0.9, 0.6] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BE10-2AA0', pn: '6SL5510-1BE10-2AF0', basic_pti: null, basic_pn: null, frameSize: 'FSA', price_pti: 3151, price_pn: 4110, price_basic_pti: null, price_basic_pn: null, power: 0.2 } },
+            { inertia: 'low', voltage: '400V', motor: { base: '1FL2103-2AF', price: { H00: 1937, H10: 3568, H01: 2104, H11: 3733, S00: 3125, S10: 4758, S01: 3295, S11: 4926, M00: 4076, M10: 5628, M01: 4254, M11: 5800 }, power: 0.2, torque: 0.64, axisHeight: 30, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 6000], s1_400: [0.64, 0.64, 0.64, 0.64, 0.5, 0.35], m_max_400: [2.24, 2.24, 2.24, 2.24, 1.8, 1.5] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BE10-2AA0', pn: '6SL5510-1BE10-2AF0', basic_pti: null, basic_pn: null, frameSize: 'FSA', price_pti: 3151, price_pn: 4110, price_basic_pti: null, price_basic_pn: null, power: 0.2 } },
+            { inertia: 'low', voltage: '400V', motor: { base: '1FL2103-4AF', price: { H00: 2058, H10: 3641, H01: 2225, H11: 3804, S00: 3243, S10: 4829, S01: 3414, S11: 4996, M00: 4195, M10: 5745, M01: 4373, M11: 5916 }, power: 0.4, torque: 1.27, axisHeight: 30, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_400: [1.27, 1.27, 1.27, 1.2, 0.95, 0.7, 0.45], m_max_400: [4.45, 4.45, 4.45, 2.8, 2.3, 1.9, 1.6] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BE10-4AA0', pn: '6SL5510-1BE10-4AF0', basic_pti: null, basic_pn: null, frameSize: 'FSA', price_pti: 3309, price_pn: 4224, price_basic_pti: null, price_basic_pn: null, power: 0.4 } },
+            { inertia: 'low', voltage: '400V', motor: { base: '1FL2104-2AF', price: { H00: 2574, H10: 4332, H01: 2741, H11: 4492, S00: 3761, S10: 5521, S01: 3931, S11: 5685, M00: 4780, M10: 6590, M01: 4958, M11: 6761 }, power: 0.75, torque: 2.4, axisHeight: 40, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_400: [2.4, 2.4, 2.4, 2.3, 1.8, 1.4, 1.0], m_max_400: [8, 8, 8, 8, 6.5, 5, 3.8] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BE10-8AA0', pn: '6SL5510-1BE10-8AF0', basic_pti: null, basic_pn: null, frameSize: 'FSB', price_pti: 4135, price_pn: 5040, price_basic_pti: null, price_basic_pn: null, power: 0.75 } },
+            { inertia: 'low', voltage: '400V', motor: { base: '1FL2104-4AF', price: { H00: 3835, H10: 5851, H01: 3999, H11: 6018, S00: 5021, S10: 7040, S01: 5192, S11: 7211, M00: 6718, M10: 8527, M01: 6897, M11: 8700 }, power: 1.0, torque: 3.2, axisHeight: 40, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_400: [3.2, 3.2, 3.2, 3.0, 2.4, 1.8, 1.2], m_max_400: [10.8, 10.8, 10.8, 10.8, 9, 7, 5] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BE11-0AA0', pn: '6SL5510-1BE11-0AF0', basic_pti: null, basic_pn: null, frameSize: 'FSB', price_pti: 4687, price_pn: 5589, price_basic_pti: null, price_basic_pn: null, power: 1.0 } },
+            { inertia: 'low', voltage: '400V', motor: { base: '1FL2105-2AF', price: { H01: 4462, H11: 6962, S01: 5667, S11: 8167, M01: 7579, M11: 10165 }, power: 1.5, torque: 4.6, axisHeight: 52, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_400: [5, 5, 5, 4.6, 3.5, 2.5, 1.5], m_max_400: [15.9, 15.9, 15.9, 15.9, 12, 9, 6] }, cable: { type: 'separate', powerBase: '6FX3_02-5CK32-1__0', signalBase: '6FX3_02-2XB11-1__0' } }, drive: { pti: '6SL5510-1BE11-5AA0', pn: '6SL5510-1BE11-5AF0', basic_pti: null, basic_pn: null, frameSize: 'FSC', price_pti: 5612, price_pn: 6502, price_basic_pti: null, price_basic_pn: null, power: 1.75 } },
+            { inertia: 'low', voltage: '400V', motor: { base: '1FL2105-4AF', price: { H01: 5332, H11: 8189, S01: 6538, S11: 9396, M01: 8455, M11: 11040 }, power: 2.0, torque: 6.6, axisHeight: 52, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_400: [8.5, 8.5, 8.4, 7.5, 5.5, 3.5, 1.0], m_max_400: [25.3, 25.3, 25.3, 19, 14.5, 11] }, cable: { type: 'separate', powerBase: '6FX3_02-5CK32-1__0', signalBase: '6FX3_02-2XB11-1__0' } }, drive: { pti: '6SL5510-1BE12-5AA0', pn: '6SL5510-1BE12-5AF0', basic_pti: null, basic_pn: null, frameSize: 'FSC', price_pti: 6763, price_pn: 7640, price_basic_pti: null, price_basic_pn: null, power: 2.5 } },
+            
+            // =================================================================================
+            // 400V - Medium Inertia Motors
+            // =================================================================================
+            { inertia: 'medium', voltage: '400V', motor: { base: '1FL2203-2AF', price: { H00: 1937, H10: 3568, H01: 2104, H11: 3733, S00: 3125, S10: 4758, S01: 3295, S11: 4926, M00: 4076, M10: 5628, M01: 4254, M11: 5803 }, power: 0.2, torque: 0.64, axisHeight: 30, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 6000], s1_400: [0.64, 0.64, 0.64, 0.64, 0.5, 0.35], m_max_400: [2.24, 2.24, 2.24, 2.24, 1.8, 1.5] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BE10-2AA0', pn: '6SL5510-1BE10-2AF0', basic_pti: null, basic_pn: null, frameSize: 'FSA', price_pti: 3151, price_pn: 4110, price_basic_pti: null, price_basic_pn: null, power: 0.2 } },
+            { inertia: 'medium', voltage: '400V', motor: { base: '1FL2203-4AF', price: { H00: 2058, H10: 3641, H01: 2225, H11: 3804, S00: 3243, S10: 4829, S01: 3414, S11: 4996, M00: 4195, M10: 5745, M01: 4373, M11: 5920 }, power: 0.4, torque: 1.27, axisHeight: 30, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 6000], s1_400: [1.27, 1.27, 1.27, 1.27, 0.9, 0.5], m_max_400: [4.45, 4.45, 4.45, 4.45, 3.5, 2.5] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BE10-4AA0', pn: '6SL5510-1BE10-4AF0', basic_pti: null, basic_pn: null, frameSize: 'FSA', price_pti: 3309, price_pn: 4224, price_basic_pti: null, price_basic_pn: null, power: 0.4 } },
+            { inertia: 'medium', voltage: '400V', motor: { base: '1FL2204-2AF', price: { H00: 2574, H10: 4332, H01: 2741, H11: 4492, S00: 3761, S10: 5521, S01: 3931, S11: 5685, M00: 4780, M10: 6590, M01: 4958, M11: 6765 }, power: 0.75, torque: 2.4, axisHeight: 40, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 6000], s1_400: [2.4, 2.4, 2.4, 2.4, 1.9, 1.0], m_max_400: [7.5, 7.5, 7.5, 7.5, 6, 4.5] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BE10-8AA0', pn: '6SL5510-1BE10-8AF0', basic_pti: null, basic_pn: null, frameSize: 'FSB', price_pti: 4135, price_pn: 5040, price_basic_pti: null, price_basic_pn: null, power: 0.75 } },
+            { inertia: 'medium', voltage: '400V', motor: { base: '1FL2204-4AF', price: { H00: 3835, H10: 5851, H01: 3999, H11: 6018, S00: 5021, S10: 7040, S01: 5192, S11: 7211, M00: 6718, M10: 8527, M01: 6897, M11: 8704 }, power: 1.0, torque: 3.2, axisHeight: 40, options: { encoders: ['H', 'S', 'M'], connector: 'C' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 6000], s1_400: [3.2, 3.2, 3.2, 3.2, 2.5, 1.2], m_max_400: [10, 10, 10, 10, 8, 5.5] }, cable: { type: 'integrated', base: '6FX3_02-7___1-1__0' } }, drive: { pti: '6SL5510-1BE11-0AA0', pn: '6SL5510-1BE11-0AF0', basic_pti: null, basic_pn: null, frameSize: 'FSB', price_pti: 4687, price_pn: 5589, price_basic_pti: null, price_basic_pn: null, power: 1.0 } },
+            { inertia: 'medium', voltage: '400V', motor: { base: '1FL2205-2AF', price: { H01: 4188, H11: 6906, S01: 5429, S11: 8163, M01: 7386, M11: 11879 }, power: 1.0, torque: 3.0, axisHeight: 48, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_400: [3.6, 3.6, 3.6, 3, 2.3, 1.6, 1.0], m_max_400: [11.5, 11.5, 11.5, 11.5, 8, 6, 4] }, cable: { type: 'separate', powerBase: '6FX3_02-5CK32-1__0', signalBase: '6FX3_02-2XB11-1__0' } }, drive: { pti: '6SL5510-1BE11-0AA0', pn: '6SL5510-1BE11-0AF0', basic_pti: null, basic_pn: null, frameSize: 'FSB', price_pti: 4687, price_pn: 5589, price_basic_pti: null, price_basic_pn: null, power: 1.0 } },
+            { inertia: 'medium', voltage: '400V', motor: { base: '1FL2205-4AF', price: { H01: 4802, H11: 7531, S01: 6215, S11: 8952, M01: 8165, M11: 12942 }, power: 1.5, torque: 4.6, axisHeight: 48, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 1000, 2000, 3000, 4000, 5000, 6000], s1_400: [6, 6, 5.8, 5.2, 4.0, 2.8, 1.5], m_max_400: [19.3, 19.3, 19.3, 19.3, 16, 13, 11] }, cable: { type: 'separate', powerBase: '6FX3_02-5CK32-1__0', signalBase: '6FX3_02-2XB11-1__0' } }, drive: { pti: '6SL5510-1BE11-5AA0', pn: '6SL5510-1BE11-5AF0', basic_pti: null, basic_pn: null, frameSize: 'FSC', price_pti: 5612, price_pn: 6502, price_basic_pti: null, price_basic_pn: null, power: 1.75 } },
 
-            { inertia: 'high', voltage: '400V', motor: { orderNo: '1FL2304-4AF..', power: 0.75, torque: 2.39, axisHeight: 45, chartData: { labels: [0, 1000, 2000, 3000, 4000], s1_400: [3.1, 3.0, 2.8, 2.4, 1.0], m_max_400: [8.3, 8.3, 8.3, 8.3, 6.8] } }, drive: { orderNo: '6SL5510-1BE10-8AF0', frameSize: 'FSB', type: 'Standard' } },
-            { inertia: 'high', voltage: '400V', motor: { orderNo: '1FL2306-4AC..', power: 1.50, torque: 7.16, axisHeight: 65, chartData: { labels: [0, 500, 1000, 1500, 2000, 2500, 3000], s1_400: [8.2, 8.2, 8.1, 7.8, 7.2, 5.8, 4.5], m_max_400: [22, 22, 22, 22, 22, 18, 14] } }, drive: { orderNo: '6SL5510-1BE11-5AF0', frameSize: 'FSC', type: 'Standard' } },
-            { inertia: 'high', voltage: '400V', motor: { orderNo: '1FL2310-6AC..', power: 7.00, torque: 33.4, axisHeight: 90, chartData: { labels: [0, 500, 1000, 1500, 2000], s1_400: [35, 35, 35, 34, 33.4], m_max_400: [90, 90, 90, 90, 63] } }, drive: { orderNo: '6SL5510-1BE17-0AF0', frameSize: 'FSD', type: 'Standard' } }
+            // =================================================================================
+            // 400V - High Inertia Motors
+            // =================================================================================
+            { inertia: 'high', voltage: '400V', motor: { base: '1FL2304-2AF', price: { H01: 2720, H11: 4158, S01: 3782, S11: 5178, M01: 4646, M11: 6069 }, power: 0.4, torque: 1.27, axisHeight: 45, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 1000, 2000, 3000, 4000], s1_400: [1.45, 1.45, 1.4, 1.27, 0.9], m_max_400: [4.45, 4.45, 4.45, 4.45, 3.5] }, cable: { type: 'separate', powerBase: '6FX3_02-5CL01-1__0', signalBase: '6FX3_02-2XB12-1__0', brakeBase: '6FX3_02-5BL03-1__0' } }, drive: { pti: '6SL5510-1BE10-4AA0', pn: '6SL5510-1BE10-4AF0', basic_pti: null, basic_pn: null, frameSize: 'FSA', price_pti: 3309, price_pn: 4224, price_basic_pti: null, price_basic_pn: null, power: 0.4 } },
+            { inertia: 'high', voltage: '400V', motor: { base: '1FL2304-4AF', price: { H01: 3424, H11: 4860, S01: 4486, S11: 5880, M01: 5459, M11: 6895 }, power: 0.75, torque: 2.39, axisHeight: 45, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 1000, 2000, 3000, 4000], s1_400: [3.1, 3.0, 2.8, 2.4, 1.0], m_max_400: [8.3, 8.3, 8.3, 8.3, 6.8] }, cable: { type: 'separate', powerBase: '6FX3_02-5CL01-1__0', signalBase: '6FX3_02-2XB12-1__0', brakeBase: '6FX3_02-5BL03-1__0' } }, drive: { pti: '6SL5510-1BE10-8AA0', pn: '6SL5510-1BE10-8AF0', basic_pti: null, basic_pn: null, frameSize: 'FSB', price_pti: 4135, price_pn: 5040, price_basic_pti: null, price_basic_pn: null, power: 0.75 } },
+            { inertia: 'high', voltage: '400V', motor: { base: '1FL2306-1AC', price: { H01: 3577, H11: 5459, S01: 4943, S11: 6768, M01: 6696, M11: 8576 }, power: 0.75, torque: 3.58, axisHeight: 65, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 500, 1000, 1500, 2000, 3000], s1_400: [3.7, 3.7, 3.7, 3.6, 3.58, 3.2], m_max_400: [12, 12, 12, 12, 12, 8.5] }, cable: { type: 'separate', powerBase: '6FX3_02-5CL01-1__0', signalBase: '6FX3_02-2XB12-1__0', brakeBase: '6FX3_02-5BL03-1__0' } }, drive: { pti: '6SL5510-1BE10-8AA0', pn: '6SL5510-1BE10-8AF0', basic_pti: null, basic_pn: null, frameSize: 'FSB', price_pti: 4135, price_pn: 5040, price_basic_pti: null, price_basic_pn: null, power: 0.75 } },
+            { inertia: 'high', voltage: '400V', motor: { base: '1FL2306-2AC', price: { H01: 4203, H11: 6085, S01: 5569, S11: 7395, M01: 6985, M11: 8869 }, power: 1.0, torque: 4.78, axisHeight: 65, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 500, 1000, 1500, 2000, 3000], s1_400: [5, 5, 5, 4.9, 4.78, 4], m_max_400: [17, 17, 17, 17, 17, 14] }, cable: { type: 'separate', powerBase: '6FX3_02-5CL01-1__0', signalBase: '6FX3_02-2XB12-1__0', brakeBase: '6FX3_02-5BL03-1__0' } }, drive: { pti: '6SL5510-1BE11-0AA0', pn: '6SL5510-1BE11-0AF0', basic_pti: null, basic_pn: null, frameSize: 'FSB', price_pti: 4687, price_pn: 5589, price_basic_pti: null, price_basic_pn: null, power: 1.0 } },
+            { inertia: 'high', voltage: '400V', motor: { base: '1FL2306-4AC', price: { H01: 5213, H11: 7093, S01: 6577, S11: 8403, M01: 7918, M11: 9784 }, power: 1.5, torque: 7.16, axisHeight: 65, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 500, 1000, 1500, 2000, 3000], s1_400: [8.2, 8.2, 8.1, 7.8, 7.2, 4.5], m_max_400: [22, 22, 22, 22, 22, 14] }, cable: { type: 'separate', powerBase: '6FX3_02-5CL02-1__0', signalBase: '6FX3_02-2XB12-1__0', brakeBase: '6FX3_02-5BL03-1__0' } }, drive: { pti: '6SL5510-1BE11-5AA0', pn: '6SL5510-1BE11-5AF0', basic_pti: null, basic_pn: null, frameSize: 'FSC', price_pti: 5612, price_pn: 6502, price_basic_pti: null, price_basic_pn: null, power: 1.75 } },
+            { inertia: 'high', voltage: '400V', motor: { base: '1FL2306-6AC', price: { H01: 6377, H11: 8256, S01: 7740, S11: 9567, M01: 9203, M11: 11082 }, power: 1.75, torque: 8.4, axisHeight: 65, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 500, 1000, 1500, 2000, 3000], s1_400: [8.8, 8.8, 8.8, 8.8, 8.4, 6], m_max_400: [30, 30, 30, 30, 28, 26] }, cable: { type: 'separate', powerBase: '6FX3_02-5CL02-1__0', signalBase: '6FX3_02-2XB12-1__0', brakeBase: '6FX3_02-5BL03-1__0' } }, drive: { pti: '6SL5510-1BE11-5AA0', pn: '6SL5510-1BE11-5AF0', basic_pti: null, basic_pn: null, frameSize: 'FSC', price_pti: 5612, price_pn: 6502, price_basic_pti: null, price_basic_pn: null, power: 1.75 } },
+            { inertia: 'high', voltage: '400V', motor: { base: '1FL2306-7AC', price: { H01: 7078, H11: 8942, S01: 8443, S11: 10253, M01: 9233, M11: 11116 }, power: 2.0, torque: 9.6, axisHeight: 65, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 500, 1000, 1500, 2000, 3000], s1_400: [13.3, 13.3, 13, 12, 9.6, 5], m_max_400: [33.4, 33.4, 33.4, 33.4, 28, 20] }, cable: { type: 'separate', powerBase: '6FX3_02-5CL02-1__0', signalBase: '6FX3_02-2XB12-1__0', brakeBase: '6FX3_02-5BL03-1__0' } }, drive: { pti: '6SL5510-1BE12-5AA0', pn: '6SL5510-1BE12-5AF0', basic_pti: null, basic_pn: null, frameSize: 'FSC', price_pti: 6763, price_pn: 7640, price_basic_pti: null, price_basic_pn: null, power: 2.5 } },
+            { inertia: 'high', voltage: '400V', motor: { base: '1FL2310-0AC', price: { H01: 7719, H11: 10120, S01: 9692, S11: 12012, M01: 11711, M11: 14127 }, power: 2.5, torque: 11.9, axisHeight: 90, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 500, 1000, 1500, 2000, 3000], s1_400: [12.6, 12.6, 12.6, 12.2, 11.9, 8], m_max_400: [37.5, 37.5, 37.5, 37.5, 32, 28] }, cable: { type: 'separate', powerBase: '6FX3_02-5CL02-1__0', signalBase: '6FX3_02-2XB12-1__0', brakeBase: '6FX3_02-5BL03-1__0' } }, drive: { pti: '6SL5510-1BE12-5AA0', pn: '6SL5510-1BE12-5AF0', basic_pti: null, basic_pn: null, frameSize: 'FSC', price_pti: 6763, price_pn: 7640, price_basic_pti: null, price_basic_pn: null, power: 2.5 } },
+            { inertia: 'high', voltage: '400V', motor: { base: '1FL2310-2AC', price: { H01: 9274, H11: 11721, S01: 11246, S11: 13614, M01: 13608, M11: 16056 }, power: 3.5, torque: 16.7, axisHeight: 90, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 500, 1000, 1500, 2000, 3000], s1_400: [18.1, 18.1, 18.1, 17.5, 16.7, 12], m_max_400: [55, 55, 55, 55, 45, 40] }, cable: { type: 'separate', powerBase: '6FX3_02-5CL12-1__0', signalBase: '6FX3_02-2XB12-1__0', brakeBase: '6FX3_02-5BL03-1__0' } }, drive: { pti: '6SL5510-1BE13-5AA0', pn: '6SL5510-1BE13-5AF0', basic_pti: null, basic_pn: null, frameSize: 'FSD', price_pti: 9061, price_pn: 9916, price_basic_pti: null, price_basic_pn: null, power: 3.5 } },
+            { inertia: 'high', voltage: '400V', motor: { base: '1FL2310-4AC', price: { H01: 13405, H11: 15851, S01: 15376, S11: 17745, M01: 17318, M11: 19780 }, power: 5.0, torque: 23.9, axisHeight: 90, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 500, 1000, 1500, 2000, 2500], s1_400: [25.2, 25.2, 25.2, 24.5, 23.9, 18], m_max_400: [70, 70, 70, 70, 60, 50] }, cable: { type: 'separate', powerBase: '6FX3_02-5CL12-1__0', signalBase: '6FX3_02-2XB12-1__0', brakeBase: '6FX3_02-5BL03-1__0' } }, drive: { pti: '6SL5510-1BE15-0AA0', pn: '6SL5510-1BE15-0AF0', basic_pti: null, basic_pn: null, frameSize: 'FSD', price_pti: 12312, price_pn: 13136, price_basic_pti: null, price_basic_pn: null, power: 5.0 } },
+            { inertia: 'high', voltage: '400V', motor: { base: '1FL2310-6AC', price: { H01: 15743, H11: 18206, S01: 17715, S11: 20099, M01: 23522, M11: 25986 }, power: 7.0, torque: 33.4, axisHeight: 90, options: { encoders: ['H', 'S', 'M'], connector: 'B' }, chartData: { labels: [0, 500, 1000, 1500, 2000], s1_400: [35.2, 35.2, 35.2, 34, 33.4], m_max_400: [90, 90, 90, 90, 63] }, cable: { type: 'separate', powerBase: '6FX3_02-5CL12-1__0', signalBase: '6FX3_02-2XB12-1__0', brakeBase: '6FX3_02-5BL03-1__0' } }, drive: { pti: '6SL5510-1BE17-0AA0', pn: '6SL5510-1BE17-0AF0', basic_pti: null, basic_pn: null, frameSize: 'FSD', price_pti: 15348, price_pn: 16144, price_basic_pti: null, price_basic_pn: null, power: 7.0 } }
         ];
+        
+        const cableLengths = { 'AD': '3m', 'AF': '5m', 'AH': '7m', 'BA': '10m', 'BF': '15m', 'CA': '20m', 'DA': '30m' };
+        const defaultState = { inertia: 'all', voltage: 'all', power: 0, comms: 'all', brake: 'all', encoder: 'all', ip: 'all', shaft: 'all', driveType: 'all' };
 
-        const state = {
-            inertia: 'all',
-            voltage: 'all',
-            power: 0
-        };
-
+        let state = { ...defaultState };
         let torqueSpeedChart = null;
         let availablePowers = [];
+        let currentSystemForCable = null;
 
         const resultsDiv = document.getElementById('results');
         const resultsCountDiv = document.getElementById('results-count');
-        const chartSection = document.getElementById('chart-section');
-        const chartTitle = document.getElementById('chart-title');
+        const detailsSection = document.getElementById('details-section');
+        const detailsTitle = document.getElementById('details-title');
         const powerSlider = document.getElementById('power-slider');
         const powerValueSpan = document.getElementById('power-value');
+        const resetButton = document.getElementById('reset-button');
+        
+        function constructMotorOrderNo(motorBase, brake, ip, shaft, encoder) {
+            return `${motorBase.base}${brake}${ip}-${shaft}${encoder}${motorBase.options.connector}0`;
+        }
+
+        function getMotorPrice(motor, brake, ip, shaft, encoder) {
+             // Price key format: [Encoder][Brake][Shaft][IP]
+            const priceKey = `${encoder}${brake}${shaft}${ip}`;
+            // A more complex key would be needed if shaft/ip were also part of price variant.
+            // Simplified key for now based on provided PDFs (Encoder, Brake, IP)
+            const simplePriceKey = `${encoder}${brake}${ip}`;
+
+            // This is a placeholder logic. You need to parse the PDF price lists to create a proper price map.
+            // For now, let's use the provided price map in the motor object.
+             const priceMapKey = `${encoder}${brake}${ip}`;
+            return motor.price[priceMapKey] || 0;
+        }
+
 
         function updatePowerSliderSteps() {
             const uniquePowers = [...new Set(systemsData.map(item => item.motor.power))].sort((a, b) => a - b);
             availablePowers = [0, ...uniquePowers];
-
             powerSlider.min = "0";
             powerSlider.max = (availablePowers.length - 1).toString();
-            powerSlider.value = "0"; 
-            state.power = 0;
-            powerValueSpan.textContent = `≥ 0.0 kW`;
         }
-
 
         function renderResults() {
             resultsDiv.innerHTML = '';
-            chartSection.classList.add('hidden');
+            detailsSection.classList.add('hidden');
 
             const filteredData = systemsData.filter(item => {
                 const inertiaMatch = state.inertia === 'all' || item.inertia === state.inertia;
                 const voltageMatch = state.voltage === 'all' || item.voltage === state.voltage;
                 const powerMatch = item.motor.power >= state.power;
-                return inertiaMatch && voltageMatch && powerMatch;
+                const commsMatch = state.comms === 'all' || (state.comms === 'PN' && (item.drive.pn || item.drive.basic_pn)) || (state.comms === 'PTI' && (item.drive.pti || item.drive.basic_pti));
+                const driveTypeMatch = state.driveType === 'all' || (state.driveType === 'standard' && (item.drive.pn || item.drive.pti)) || (state.driveType === 'basic' && (item.drive.basic_pn || item.drive.basic_pti));
+                const encoderMatch = state.encoder === 'all' || item.motor.options.encoders.includes(state.encoder);
+
+                return inertiaMatch && voltageMatch && powerMatch && commsMatch && driveTypeMatch && encoderMatch;
             });
             
-            resultsCountDiv.textContent = `找到 ${filteredData.length} 个匹配的系统组合`;
+            let finalResults = [];
+            filteredData.forEach(system => {
+                 const ipOptions = state.ip === 'all' ? ['0', '1'] : [state.ip];
+                 const shaftOptions = state.shaft === 'all' ? ['0', '1'] : [state.shaft];
+                 const brakeOptions = state.brake === 'all' ? ['0', '1'] : [state.brake];
+                 const encoderOptions = state.encoder === 'all' ? system.motor.options.encoders : [state.encoder];
+                 const driveTypeOptions = state.driveType === 'all' ? ['standard', 'basic'] : [state.driveType];
+                 const commsOptions = state.comms === 'all' ? ['PN', 'PTI'] : [state.comms];
 
-            if (filteredData.length === 0) {
-                resultsDiv.innerHTML = `<p class="md:col-span-2 xl:col-span-3 text-center text-stone-500">未找到匹配的系统。请尝试放宽筛选条件。</p>`;
+                driveTypeOptions.forEach(driveType => {
+                    commsOptions.forEach(comms => {
+                        let driveOrderNo, drivePrice;
+                        if(driveType === 'standard' && comms === 'PN') { driveOrderNo = system.drive.pn; drivePrice = system.drive.price_pn; }
+                        else if (driveType === 'standard' && comms === 'PTI') { driveOrderNo = system.drive.pti; drivePrice = system.drive.price_pti; }
+                        else if (driveType === 'basic' && comms === 'PN') { driveOrderNo = system.drive.basic_pn; drivePrice = system.drive.price_basic_pn; }
+                        else if (driveType === 'basic' && comms === 'PTI') { driveOrderNo = system.drive.basic_pti; drivePrice = system.drive.price_basic_pti; }
+
+                        if(driveOrderNo){
+                             ipOptions.forEach(ip => {
+                                shaftOptions.forEach(shaft => {
+                                    brakeOptions.forEach(brake => {
+                                        encoderOptions.forEach(encoder => {
+                                            const motorPriceKey = `${encoder}${brake}${ip}`; // Simplified key
+                                            const motorPrice = system.motor.price[motorPriceKey];
+                                            if(motorPrice) {
+                                                finalResults.push({
+                                                    system,
+                                                    motorOrderNo: constructMotorOrderNo(system.motor, brake, ip, shaft, encoder),
+                                                    motorPrice,
+                                                    driveOrderNo,
+                                                    drivePrice,
+                                                    comms,
+                                                    driveType,
+                                                    brake,
+                                                    ip,
+                                                    shaft,
+                                                    encoder
+                                                });
+                                            }
+                                        });
+                                    });
+                                });
+                            });
+                        }
+                    });
+                });
+            });
+
+            resultsCountDiv.textContent = `找到 ${finalResults.length} 个匹配的系统组合`;
+
+            if (finalResults.length === 0) {
+                resultsDiv.innerHTML = `<p class="lg:col-span-2 xl:col-span-3 text-center text-stone-500">未找到匹配的系统。请尝试放宽筛选条件。</p>`;
                 return;
             }
 
-            filteredData.forEach((system, index) => {
+            finalResults.forEach((result) => {
                 const card = document.createElement('div');
                 card.className = 'card bg-white rounded-xl shadow-lg p-6 flex flex-col justify-between';
                 
-                const integratedCableHeights = [20, 30, 40];
-                const cableTypeInfo = integratedCableHeights.includes(system.motor.axisHeight) 
-                    ? '集成式 (双重电缆)' 
-                    : '分立式 (动力/信号分离)';
+                const commsText = result.comms === 'PN' ? 'PROFINET' : '脉冲 (PTI)';
+                const driveVersionText = result.driveType === 'basic' ? '经济版' : '标准版';
+                const brakeText = result.brake === '0' ? '无抱闸' : '带抱闸';
+                const ipText = result.ip === '0' ? 'IP54' : 'IP65';
+                const shaftText = result.shaft === '0' ? '光轴' : '带键槽';
+
 
                 card.innerHTML = `
                     <div>
-                        <div class="mb-4">
-                            <h3 class="text-xl font-bold text-teal-700">电机: ${system.motor.orderNo}</h3>
-                            <div class="mt-2 text-sm text-stone-600 grid grid-cols-2 gap-1">
-                                <span>额定功率: <strong class="text-stone-800">${system.motor.power.toFixed(2)} kW</strong></span>
-                                <span>额定转矩: <strong class="text-stone-800">${system.motor.torque.toFixed(2)} Nm</strong></span>
-                                <span>惯量类型: <strong class="text-stone-800">${capitalize(system.inertia)}</strong></span>
-                                <span>电机轴高: <strong class="text-stone-800">${system.motor.axisHeight}</strong></span>
+                        <div class="mb-2">
+                            <h3 class="text-base font-bold text-teal-700 break-all">电机: ${result.motorOrderNo}</h3>
+                            <p class="text-sm text-red-600 font-semibold">价格: ¥${result.motorPrice.toLocaleString()}</p>
+                            <div class="mt-1 text-sm text-stone-600 grid grid-cols-2 gap-x-4 gap-y-1">
+                                <span>功率: <strong class="text-stone-800">${result.system.motor.power.toFixed(2)} kW</strong></span>
+                                <span>抱闸: <strong class="text-stone-800">${brakeText}</strong></span>
+                                <span>防护: <strong class="text-stone-800">${ipText}</strong></span>
+                                <span>轴伸: <strong class="text-stone-800">${shaftText}</strong></span>
                             </div>
                         </div>
-                        <div class="mb-4 pt-4 border-t border-stone-200">
-                            <h3 class="text-xl font-bold text-teal-700">驱动器: ${system.drive.orderNo}</h3>
-                             <div class="mt-2 text-sm text-stone-600 grid grid-cols-2 gap-1">
-                                <span>电压等级: <strong class="text-stone-800">${system.voltage}</strong></span>
-                                <span>外形尺寸: <strong class="text-stone-800">${system.drive.frameSize}</strong></span>
-                                <span class="col-span-2">线缆类型: <strong class="text-stone-800">${cableTypeInfo}</strong></span>
-                                <span class="col-span-2">线缆系列: <strong class="text-stone-800">MC350 (固定) / MC380 (拖链)</strong></span>
+                        <div class="mb-4 pt-2 border-t border-stone-200">
+                             <h3 class="text-base font-bold text-teal-700 break-all">驱动器: ${result.driveOrderNo}</h3>
+                             <p class="text-sm text-red-600 font-semibold">价格: ¥${result.drivePrice.toLocaleString()}</p>
+                             <div class="mt-1 text-sm text-stone-600 grid grid-cols-2 gap-x-4 gap-y-1">
+                                <span>通讯: <strong class="text-stone-800">${commsText}</strong></span>
+                                <span>版本: <strong class="text-stone-800">${driveVersionText}</strong></span>
                             </div>
                         </div>
                     </div>
-                    <button class="view-chart-btn mt-4 w-full bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors" data-index="${index}">
-                        查看性能曲线
+                    <button class="view-details-btn mt-4 w-full bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors" data-system='${JSON.stringify(result.system)}'>
+                        查看详情与选配电缆
                     </button>
                 `;
                 resultsDiv.appendChild(card);
             });
             
-            document.querySelectorAll('.view-chart-btn').forEach(button => {
+            document.querySelectorAll('.view-details-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
-                    const systemIndex = parseInt(e.target.dataset.index, 10);
-                    const systemToDisplay = filteredData[systemIndex]; 
-                    displayChart(systemToDisplay.motor);
+                    currentSystemForCable = JSON.parse(e.currentTarget.dataset.system);
+                    displayDetails(currentSystemForCable);
                 });
             });
         }
         
-        function capitalize(s) {
-            if (typeof s !== 'string') return '';
-            return s.charAt(0).toUpperCase() + s.slice(1);
-        }
-
-        function displayChart(motor) {
-            chartSection.classList.remove('hidden');
-            chartTitle.textContent = `性能曲线: ${motor.orderNo}`;
+        function displayDetails(system) {
+            if (!system || !system.motor || !system.motor.chartData) {
+                console.error("Invalid system data for details view:", system);
+                return; 
+            }
+            detailsSection.classList.remove('hidden');
+            const motorOrderNo = constructMotorOrderNo(system.motor, state.brake === 'all' ? '1':state.brake, state.ip === 'all' ? '1':state.ip, state.shaft === 'all' ? '1':state.shaft, state.encoder === 'all' ? 'S':state.encoder);
+            detailsTitle.textContent = `系统详情: ${motorOrderNo}`;
             
             const datasets = [];
+            const motor = system.motor;
+            if (motor.chartData.s1_400) { datasets.push({ label: 'S1 @400V', data: motor.chartData.s1_400, borderColor: '#0d9488', backgroundColor: 'rgba(13, 148, 136, 0.1)', borderWidth: 2, fill: true, tension: 0.1 }); }
+            if (motor.chartData.m_max_400) { datasets.push({ label: 'Mmax @400V', data: motor.chartData.m_max_400, borderColor: '#047857', borderWidth: 3, fill: false, tension: 0.1, pointRadius: 0 }); }
+            if (motor.chartData.s1_200) { datasets.push({ label: 'S1 @200V', data: motor.chartData.s1_200, borderColor: '#f97316', backgroundColor: 'rgba(249, 115, 22, 0.1)', borderWidth: 2, fill: true, tension: 0.1 }); }
+            if (motor.chartData.m_max_200) { datasets.push({ label: 'Mmax @200V', data: motor.chartData.m_max_200, borderColor: '#ea580c', borderWidth: 3, fill: false, tension: 0.1, pointRadius: 0, borderDash: [5, 5] }); }
             
-            if (motor.chartData.s1_400) {
-                 datasets.push({
-                    label: 'S1 @400V',
-                    data: motor.chartData.s1_400,
-                    borderColor: '#0d9488', 
-                    backgroundColor: 'rgba(13, 148, 136, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.1
-                });
-            }
-            if (motor.chartData.m_max_400) {
-                 datasets.push({
-                    label: 'Mmax @400V',
-                    data: motor.chartData.m_max_400,
-                    borderColor: '#047857', 
-                    borderWidth: 3,
-                    fill: false,
-                    tension: 0.1,
-                    pointRadius: 0
-                });
-            }
-            if (motor.chartData.s1_200) {
-                 datasets.push({
-                    label: 'S1 @200V',
-                    data: motor.chartData.s1_200,
-                    borderColor: '#f97316', 
-                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.1
-                });
-            }
-            if (motor.chartData.m_max_200) {
-                 datasets.push({
-                    label: 'Mmax @200V',
-                    data: motor.chartData.m_max_200,
-                    borderColor: '#ea580c', 
-                    borderWidth: 3,
-                    fill: false,
-                    tension: 0.1,
-                    pointRadius: 0,
-                    borderDash: [5, 5]
-                });
-            }
+            const chartData = { labels: motor.chartData.labels, datasets: datasets };
+            const ctx = document.getElementById('torque-speed-chart').getContext('2d');
+            if (torqueSpeedChart) { torqueSpeedChart.destroy(); }
+            torqueSpeedChart = new Chart(ctx, { type: 'line', data: chartData, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: false }, legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } }, scales: { x: { title: { display: true, text: '转速 (rpm)' } }, y: { title: { display: true, text: '转矩 (Nm)' }, beginAtZero: true } }, interaction: { mode: 'nearest', axis: 'x', intersect: false } } });
             
-            const chartData = {
-                labels: motor.chartData.labels,
-                datasets: datasets
+            renderCableSelector();
+            detailsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function renderCableSelector() {
+            const cableSelectionArea = document.getElementById('cable-selection-area');
+            let lengthButtons = '';
+            for (const [code, length] of Object.entries(cableLengths)) {
+                lengthButtons += `<button data-length-code="${code}" class="cable-option-btn cable-length-btn px-4 py-2 text-sm bg-stone-200 rounded-lg hover:bg-stone-300 transition-colors ${code === 'AF' ? 'cable-option-btn-active' : ''}">${length}</button>`;
+            }
+
+            cableSelectionArea.innerHTML = `
+                <h3 class="text-xl font-bold text-center mb-4">4. 选择配套电缆</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold mb-2">电缆系列</h4>
+                        <div id="cable-series-selector" class="flex flex-wrap gap-2">
+                             <button data-series="5" class="cable-option-btn cable-series-btn flex-grow px-3 py-1.5 bg-stone-200 rounded-lg hover:bg-stone-300 transition-colors cable-option-btn-active">MC 350 (固定安装)</button>
+                             <button data-series="8" class="cable-option-btn cable-series-btn flex-grow px-3 py-1.5 bg-stone-200 rounded-lg hover:bg-stone-300 transition-colors">MC 380 (拖链应用)</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">电缆长度</h4>
+                        <div id="cable-length-selector" class="flex flex-wrap gap-2">
+                            ${lengthButtons}
+                        </div>
+                    </div>
+                </div>
+                <div id="cable-results" class="mt-6 bg-teal-50 p-4 rounded-lg"></div>
+            `;
+            
+            document.getElementById('cable-series-selector').addEventListener('click', handleCableOptionChange);
+            document.getElementById('cable-length-selector').addEventListener('click', handleCableOptionChange);
+
+            updateCableOrderNumber();
+        }
+
+        function handleCableOptionChange(e) {
+            if (e.target.tagName === 'BUTTON') {
+                const parent = e.target.parentElement;
+                parent.querySelectorAll('.cable-option-btn').forEach(btn => btn.classList.remove('cable-option-btn-active'));
+                e.target.classList.add('cable-option-btn-active');
+                updateCableOrderNumber();
+            }
+        }
+        
+        function updateCableOrderNumber() {
+            const series = document.querySelector('.cable-series-btn.cable-option-btn-active').dataset.series;
+            const lengthCode = document.querySelector('.cable-length-btn.cable-option-btn-active').dataset.lengthCode;
+            const cableResultsDiv = document.getElementById('cable-results');
+            
+            let resultsHTML = '<h4 class="font-semibold mb-2">电缆订货号:</h4><div class="space-y-2">';
+            const cableInfo = currentSystemForCable.motor.cable;
+            const brakeSelected = state.brake === 'all' ? '1' : state.brake; // Assume brake for cable selection if 'all'
+
+            if (cableInfo.type === 'integrated') {
+                let base = cableInfo.base.replace('_', series);
+                let brakeCode = brakeSelected === '1' ? 'D' : 'C';
+                base = base.replace('___', `C${brakeCode}D`); 
+                base = base.replace('__', lengthCode);
+                resultsHTML += `<p class="text-teal-800 font-mono bg-white p-2 rounded"><strong>集成电缆:</strong> ${base}</p>`;
+            } else { 
+                let powerCable = cableInfo.powerBase.replace('_', series).replace('__', lengthCode);
+                 resultsHTML += `<p class="text-teal-800 font-mono bg-white p-2 rounded"><strong>动力电缆:</strong> ${powerCable}</p>`;
+                
+                let signalCable = cableInfo.signalBase.replace('_', series).replace('__', lengthCode);
+                resultsHTML += `<p class="text-teal-800 font-mono bg-white p-2 rounded"><strong>信号电缆:</strong> ${signalCable}</p>`;
+                
+                if (brakeSelected === '1' && cableInfo.brakeBase) {
+                     let brakeCable = cableInfo.brakeBase.replace('_', series).replace('__', lengthCode);
+                     resultsHTML += `<p class="text-teal-800 font-mono bg-white p-2 rounded"><strong>抱闸电缆:</strong> ${brakeCable}</p>`;
+                }
+            }
+
+            resultsHTML += '</div>';
+            cableResultsDiv.innerHTML = resultsHTML;
+        }
+
+        function resetState() {
+            state = { ...defaultState };
+            document.querySelectorAll('#controls .control-btn').forEach(btn => {
+                btn.classList.remove('control-btn-active');
+            });
+
+            // Set default active buttons
+            const defaultSelectors = {
+                '#inertia-selector': 'all',
+                '#voltage-selector': 'all',
+                '#brake-selector': 'all',
+                '#encoder-selector': 'all',
+                '#ip-selector': 'all',
+                '#shaft-selector': 'all',
+                '#comms-selector': 'all',
+                '#drivetype-selector': 'all'
             };
 
-            const ctx = document.getElementById('torque-speed-chart').getContext('2d');
-            if (torqueSpeedChart) {
-                torqueSpeedChart.destroy();
+            for(const [selector, value] of Object.entries(defaultSelectors)){
+                document.querySelector(`${selector} button[data-value="${value}"]`).classList.add('control-btn-active');
             }
-            torqueSpeedChart = new Chart(ctx, {
-                type: 'line',
-                data: chartData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: false },
-                        legend: { position: 'top' },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: { display: true, text: '转速 (rpm)' }
-                        },
-                        y: {
-                            title: { display: true, text: '转矩 (Nm)' },
-                            beginAtZero: true
-                        }
-                    },
-                    interaction: {
-                      mode: 'nearest',
-                      axis: 'x',
-                      intersect: false
-                    }
-                }
-            });
-             chartSection.scrollIntoView({ behavior: 'smooth' });
+            
+            powerSlider.value = 0;
+            powerValueSpan.textContent = `≥ 0.00 kW`;
+            
+            renderResults();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const inertiaSelector = document.getElementById('inertia-selector');
-            const voltageSelector = document.getElementById('voltage-selector');
-            
             updatePowerSliderSteps();
 
-            function setupButtonGroup(selector, stateKey) {
-                 selector.addEventListener('click', (e) => {
-                    if (e.target.tagName === 'BUTTON') {
+            function setupButtonGroup(selectorId, stateKey) {
+                const selector = document.getElementById(selectorId);
+                selector.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'BUTTON' && !e.target.disabled) {
                         state[stateKey] = e.target.dataset.value;
                         Array.from(selector.children).forEach(btn => btn.classList.remove('control-btn-active'));
                         e.target.classList.add('control-btn-active');
@@ -328,17 +592,29 @@
                 });
             }
 
-            setupButtonGroup(inertiaSelector, 'inertia');
-            setupButtonGroup(voltageSelector, 'voltage');
+            setupButtonGroup('inertia-selector', 'inertia');
+            setupButtonGroup('voltage-selector', 'voltage');
+            setupButtonGroup('brake-selector', 'brake');
+            setupButtonGroup('encoder-selector', 'encoder');
+            setupButtonGroup('ip-selector', 'ip');
+            setupButtonGroup('shaft-selector', 'shaft');
+            setupButtonGroup('comms-selector', 'comms');
+            setupButtonGroup('drivetype-selector', 'driveType');
+
 
             powerSlider.addEventListener('input', (e) => {
                 const sliderIndex = parseInt(e.target.value, 10);
                 const selectedPower = availablePowers[sliderIndex];
                 state.power = selectedPower;
-                powerValueSpan.textContent = `≥ ${selectedPower.toFixed(1)} kW`;
-                renderResults();
+                powerValueSpan.textContent = `≥ ${selectedPower.toFixed(2)} kW`;
             });
             
+            // Render results on mouseup for better performance
+            powerSlider.addEventListener('mouseup', renderResults);
+            // Also for touch devices
+            powerSlider.addEventListener('touchend', renderResults);
+            
+            resetButton.addEventListener('click', resetState);
             renderResults();
         });
     </script>
