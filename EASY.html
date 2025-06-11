@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汇川Easy系列PLC产品选型配置工具 (布局优化版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Helvetica Neue', 'Hiragino Sans GB', 'WenQuanYi Micro Hei', 'Microsoft Yahei', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .input-card {
+            @apply mb-6 p-5 bg-white rounded-xl shadow-sm border border-gray-200;
+        }
+        .input-label {
+            @apply block text-sm font-medium text-gray-700 mb-2;
+        }
+        .number-input {
+            @apply w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 transition-colors;
+        }
+        .result-card {
+            @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6;
+        }
+        .result-title {
+            @apply text-xl font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3;
+        }
+        .result-item {
+            @apply flex justify-between items-center py-2.5 border-b border-gray-100;
+        }
+        .result-item-label {
+            @apply text-gray-600;
+        }
+        .result-item-value {
+            @apply font-semibold text-gray-800;
+        }
+        .spec-item {
+            @apply flex justify-between border-b border-dashed border-gray-200 py-1.5;
+        }
+        .warning-banner {
+            @apply bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4 rounded-lg mb-4;
+        }
+        .error-banner {
+             @apply bg-red-50 border-l-4 border-red-500 text-red-800 p-4 rounded-lg mb-4;
+        }
+        .scenario-card {
+            @apply bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer border border-gray-200;
+        }
+        .scenario-title {
+            @apply font-bold text-lg text-indigo-700 mb-2;
+        }
+        .scenario-description {
+            @apply text-sm text-gray-600 mb-4;
+        }
+        .scenario-recommendation {
+            @apply text-sm font-semibold text-gray-800;
+        }
+    </style>
+</head>
+<body class="text-gray-900">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-indigo-600">汇川Easy系列PLC产品选型配置工具</h1>
+            <p class="mt-3 text-gray-600">根据官方手册最终校验并优化，为您智能推荐最合适的产品配置方案。</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            <div class="lg:col-span-2">
+                 <h2 class="text-2xl font-bold mb-4 text-gray-700">1. 输入您的需求</h2>
+                <div class="bg-white p-6 rounded-xl shadow-lg border">
+                    <div class="input-card">
+                        <h3 class="font-semibold mb-4 text-indigo-600 flex items-center text-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M12 6V3m0 18v-3m6-6h3m-3 6h3M9 6h6M9 12h6M9 18h6" /></svg>
+                            核心功能
+                        </h3>
+                        <div class="flex items-center mb-3"><input id="needEtherCAT" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"><label for="needEtherCAT" class="ml-3 block text-sm text-gray-800">需要 EtherCAT 总线控制?</label></div>
+                        <div class="flex items-center mb-3"><input id="needEthernet" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"><label for="needEthernet" class="ml-3 block text-sm text-gray-800">需要以太网通讯?</label></div>
+                        <div class="flex items-center mb-3"><input id="needProfinet" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"><label for="needProfinet" class="ml-3 block text-sm text-gray-800">需要 PROFINET 从站功能?</label></div>
+                        <div><label for="axes" class="input-label">运动控制轴数 (最多32)</label><input type="number" id="axes" name="axes" class="number-input" value="0" min="0" max="32"></div>
+                    </div>
+                    
+                    <div class="input-card">
+                         <h3 class="font-semibold mb-4 text-indigo-600 flex items-center text-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" /></svg>
+                            I/O 点数需求
+                         </h3>
+                         <div><label for="di" class="input-label">数字量输入 (DI)</label><input type="number" id="di" name="di" class="number-input" value="8" min="0"></div>
+                        <div class="mt-4"><label for="do" class="input-label">数字量输出 (DO)</label><input type="number" id="do" name="do" class="number-input" value="8" min="0"></div>
+                        <div class="mt-4"><span class="input-label">DO 输出类型</span><div class="flex items-center mt-2 space-x-6"><div class="flex items-center"><input id="do_npn" name="do_type" type="radio" value="NPN" checked class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"><label for="do_npn" class="ml-2 block text-sm text-gray-800">NPN (漏型)</label></div><div class="flex items-center"><input id="do_pnp" name="do_type" type="radio" value="PNP" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"><label for="do_pnp" class="ml-2 block text-sm text-gray-800">PNP (源型)</label></div></div></div>
+                        <div class="mt-4"><label for="ai" class="input-label">模拟量输入 (AI)</label><input type="number" id="ai" name="ai" class="number-input" value="0" min="0"></div>
+                        <div class="mt-4"><label for="ao" class="input-label">模拟量输出 (AO)</label><input type="number" id="ao" name="ao" class="number-input" value="0" min="0"></div>
+                        <div class="mt-4"><label for="temp" class="input-label">温度输入 (RTD/TC)</label><input type="number" id="temp" name="temp" class="number-input" value="0" min="0"></div>
+                    </div>
+
+                    <div class="input-card">
+                        <h3 class="font-semibold mb-4 text-indigo-600 flex items-center text-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                            特殊功能 (通过扩展卡)
+                        </h3>
+                        <div class="flex items-center mb-3"><input id="needCAN" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"><label for="needCAN" class="ml-3 block text-sm text-gray-800">CAN / CANopen 通讯</label></div>
+                        <div class="flex items-center mb-3"><input id="needTF" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"><label for="needTF" class="ml-3 block text-sm text-gray-800">TF (MicroSD) 卡存储</label></div>
+                        <div class="flex items-center mb-3"><input id="needRTC" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"><label for="needRTC" class="ml-3 block text-sm text-gray-800">实时时钟 (RTC)</label></div>
+                        <div class="mt-4"><label for="extraSerial" class="input-label">额外串口 (RS232/485) 数量</label><input type="number" id="extraSerial" name="extraSerial" class="number-input" value="0" min="0" max="2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3">
+                 <h2 class="text-2xl font-bold mb-4 text-gray-700">2. 推荐配置方案</h2>
+                <div id="warnings"></div>
+                <div id="results">
+                    <div class="text-center text-gray-500 py-10 bg-white rounded-xl shadow-lg border h-full flex items-center justify-center">
+                        <p>请在左侧输入您的需求，或从下方选择一个典型应用场景开始。</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <section class="mt-16">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">典型应用场景参考</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="scenario-card" onclick="applyScenario('simple_logic')">
+                    <h3 class="scenario-title">简易逻辑控制</h3>
+                    <p class="scenario-description">适用于基础的开关量控制，如小型传送带、照明控制、简单的设备启停等。对通讯和运动控制要求不高。</p>
+                    <p class="scenario-recommendation">推荐系列: Easy301</p>
+                </div>
+                <div class="scenario-card" onclick="applyScenario('standalone_motion')">
+                    <h3 class="scenario-title">单机脉冲运动控制</h3>
+                    <p class="scenario-description">适用于需要少量脉冲轴定位或定长送料的独立设备，如贴标机、分切机、小型包装设备。</p>
+                    <p class="scenario-recommendation">推荐系列: Easy302, Easy320</p>
+                </div>
+                <div class="scenario-card" onclick="applyScenario('bus_motion')">
+                    <h3 class="scenario-title">总线式高性能运动控制</h3>
+                    <p class="scenario-description">适用于需要多轴同步、插补等复杂运动控制的场景，如机械手、CNC、复杂的包装或组装设备。</p>
+                    <p class="scenario-recommendation">推荐系列: Easy50X, Easy52X</p>
+                </div>
+                <div class="scenario-card" onclick="applyScenario('networked_system')">
+                    <h3 class="scenario-title">网络化系统集成</h3>
+                    <p class="scenario-description">作为生产线的一部分，需要通过工业以太网与上位机(SCADA/MES)、HMI或其他PLC进行数据交互。</p>
+                    <p class="scenario-recommendation">推荐系列: Easy320, Easy52X</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // --- DATA DEFINITIONS (VALIDATED) ---
+        const plcSeries = [
+            { name: 'Easy301-0808TN', series: 'Easy301', baseDI: 8, baseDO: 8, doType: 'NPN', maxExtModules: 8, maxExtCards: 0, hasEthernet: false, hasEtherCAT: false, hasProfinet: false, pulseAxes: 4, busAxes: 0, costIndex: 10, programCapacity: '128KB步', instructionSpeed: '20k步/2ms', notes: '超薄设计，不支持扩展卡。' },
+            { name: 'Easy302-0808TN', series: 'Easy302', baseDI: 8, baseDO: 8, doType: 'NPN', maxExtModules: 16, maxExtCards: 2, hasEthernet: false, hasEtherCAT: false, hasProfinet: false, pulseAxes: 5, busAxes: 0, costIndex: 12, programCapacity: '128KB步', instructionSpeed: '20k步/2ms', notes: 'CAN通讯需固件V5.65.2.0及以上。' },
+            { name: 'Easy320-0808TN', series: 'Easy320', baseDI: 8, baseDO: 8, doType: 'NPN', maxExtModules: 16, maxExtCards: 2, hasEthernet: true, hasEtherCAT: false, hasProfinet: true, pulseAxes: 5, busAxes: 0, costIndex: 15, programCapacity: '128K步', instructionSpeed: '20k步/2ms', notes: '支持PROFINET从站。CAN通讯需固件V5.65.2.0及以上。' },
+            { name: 'Easy320-0808TP', series: 'Easy320', baseDI: 8, baseDO: 8, doType: 'PNP', maxExtModules: 16, maxExtCards: 2, hasEthernet: true, hasEtherCAT: false, hasProfinet: true, pulseAxes: 5, busAxes: 0, costIndex: 15, programCapacity: '128K步', instructionSpeed: '20k步/2ms', notes: '支持PROFINET从站。CAN通讯需固件V5.65.2.0及以上。' },
+            { name: 'Easy501-0808TN', series: 'Easy501', baseDI: 8, baseDO: 8, doType: 'NPN', maxExtModules: 16, maxExtCards: 2, hasEthernet: false, hasEtherCAT: true, hasProfinet: false, pulseAxes: 5, busAxes: 8, costIndex: 20, programCapacity: '200KB步', instructionSpeed: '20k步/2ms', notes: 'CAN通讯需固件V5.65.2.0及以上。' },
+            { name: 'Easy502-0808TN', series: 'Easy502', baseDI: 8, baseDO: 8, doType: 'NPN', maxExtModules: 16, maxExtCards: 2, hasEthernet: false, hasEtherCAT: true, hasProfinet: false, pulseAxes: 5, busAxes: 16, costIndex: 25, programCapacity: '200KB步', instructionSpeed: '20k步/2ms', notes: 'CAN通讯需固件V5.65.2.0及以上。' },
+            { name: 'Easy521-0808TN', series: 'Easy52X', baseDI: 8, baseDO: 8, doType: 'NPN', maxExtModules: 16, maxExtCards: 2, hasEthernet: true, hasEtherCAT: true, hasProfinet: true, pulseAxes: 5, busAxes: 8, costIndex: 30, programCapacity: '200KB步', instructionSpeed: '20k步/1.6ms', notes: '高速输入200kHz。支持PROFINET从站。CAN通讯需固件V5.66.0.0及以上。' },
+            { name: 'Easy521-0808TP', series: 'Easy52X', baseDI: 8, baseDO: 8, doType: 'PNP', maxExtModules: 16, maxExtCards: 2, hasEthernet: true, hasEtherCAT: true, hasProfinet: true, pulseAxes: 5, busAxes: 8, costIndex: 30, programCapacity: '200KB步', instructionSpeed: '20k步/1.6ms', notes: '高速输入100kHz。支持PROFINET从站。CAN通讯需固件V5.66.0.0及以上。' },
+            { name: 'Easy522-0808TN', series: 'Easy52X', baseDI: 8, baseDO: 8, doType: 'NPN', maxExtModules: 16, maxExtCards: 2, hasEthernet: true, hasEtherCAT: true, hasProfinet: true, pulseAxes: 5, busAxes: 16, costIndex: 35, programCapacity: '200KB步', instructionSpeed: '20k步/1.6ms', notes: '高速输入200kHz。支持PROFINET从站。CAN通讯需固件V5.66.0.0及以上。' },
+            { name: 'Easy522-0808TP', series: 'Easy52X', baseDI: 8, baseDO: 8, doType: 'PNP', maxExtModules: 16, maxExtCards: 2, hasEthernet: true, hasEtherCAT: true, hasProfinet: true, pulseAxes: 5, busAxes: 16, costIndex: 35, programCapacity: '200KB步', instructionSpeed: '20k步/1.6ms', notes: '高速输入100kHz。支持PROFINET从站。CAN通讯需固件V5.66.0.0及以上。' },
+            { name: 'Easy523-0808TN', series: 'Easy52X', baseDI: 8, baseDO: 8, doType: 'NPN', maxExtModules: 16, maxExtCards: 2, hasEthernet: true, hasEtherCAT: true, hasProfinet: true, pulseAxes: 5, busAxes: 32, costIndex: 40, programCapacity: '200KB步', instructionSpeed: '20k步/1.6ms', notes: '高速输入200kHz。支持PROFINET从站。CAN通讯需固件V5.66.0.0及以上。' },
+            { name: 'Easy523-0808TP', series: 'Easy52X', baseDI: 8, baseDO: 8, doType: 'PNP', maxExtModules: 16, maxExtCards: 2, hasEthernet: true, hasEtherCAT: true, hasProfinet: true, pulseAxes: 5, busAxes: 32, costIndex: 40, programCapacity: '200KB步', instructionSpeed: '20k步/1.6ms', notes: '高速输入100kHz。支持PROFINET从站。CAN通讯需固件V5.66.0.0及以上。' },
+        ];
+        const gl20Modules = [ { name: 'GL20-3200END', type: 'DI', count: 32, costIndex: 10 }, { name: 'GL20-1600END', type: 'DI', count: 16, costIndex: 6 }, { name: 'GL20-0800END', type: 'DI', count: 8, costIndex: 4 }, { name: 'GL20-0032ETN', type: 'DO', doType: 'NPN', count: 32, costIndex: 10 }, { name: 'GL20-0016ETN', type: 'DO', doType: 'NPN', count: 16, costIndex: 6 }, { name: 'GL20-0008ETN', type: 'DO', doType: 'NPN', count: 8, costIndex: 4 }, { name: 'GL20-0016ETP', type: 'DO', doType: 'PNP', count: 16, costIndex: 6 }, { name: 'GL20-0008ETP', type: 'DO', doType: 'PNP', count: 8, costIndex: 4 }, { name: 'GL20-0008ER', type: 'DO', doType: 'Relay', count: 8, costIndex: 5 }, { name: 'GL20-0808ETN', type: 'MIXED', di: 8, do: 8, doType: 'NPN', costIndex: 8 }, { name: 'GL20-8ADI', type: 'AI', count: 8, costIndex: 15 }, { name: 'GL20-8ADV', type: 'AI', count: 8, costIndex: 15 }, { name: 'GL20-4AD', type: 'AI', count: 4, costIndex: 9 }, { name: 'GL20-4DA', type: 'AO', count: 4, costIndex: 12 }, { name: 'GL20-4PT', type: 'TEMP', count: 4, costIndex: 20 }, { name: 'GL20-4TC', type: 'TEMP', count: 4, costIndex: 20 }, ];
+        const ge20Cards = [ { name: 'GE20-CAN-485', provides: ['CAN', 'SERIAL'], slot: 'A', id: 15 }, { name: 'GE20-TF', provides: ['TF'], slot: 'B', id: 1 }, { name: 'GE20-RTC', provides: ['RTC'], slot: 'B', id: 9 }, { name: 'GE20-TF-RTC', provides: ['TF', 'RTC'], slot: 'B', id: 6 }, { name: 'GE20-232/485', provides: ['SERIAL'], slot: 'A/B', id: 7 }, { name: 'GE20-232/485-RTC', provides: ['SERIAL', 'RTC'], slot: 'B', id: 14 }, { name: 'GE20-4DI', provides: ['DI'], count: 4, slot: 'A/B', id: 13 }, { name: 'GE20-4DO-TN', provides: ['DO'], count: 4, doType: 'NPN', slot: 'A/B', id: 5 }, ];
+        const scenarios = {
+            simple_logic: { di: 12, do: 10, axes: 0, needEtherCAT: false, needEthernet: false, needProfinet: false, ai: 0, ao: 0, temp: 0, needCAN: false, needTF: false, needRTC: false, extraSerial: 0 },
+            standalone_motion: { di: 24, do: 20, axes: 3, needEtherCAT: false, needEthernet: true, needProfinet: false, ai: 4, ao: 2, temp: 0, needCAN: false, needTF: false, needRTC: true, extraSerial: 1 },
+            bus_motion: { di: 32, do: 32, axes: 8, needEtherCAT: true, needEthernet: true, needProfinet: false, ai: 0, ao: 0, temp: 0, needCAN: true, needTF: true, needRTC: true, extraSerial: 0 },
+            networked_system: { di: 40, do: 40, axes: 0, needEtherCAT: false, needEthernet: true, needProfinet: true, ai: 8, ao: 4, temp: 2, needCAN: false, needTF: true, needRTC: true, extraSerial: 1 }
+        };
+
+        const getEl = (id) => document.getElementById(id);
+
+        function calculateConfiguration() {
+            const req = {
+                needEtherCAT: getEl('needEtherCAT').checked, needEthernet: getEl('needEthernet').checked, needProfinet: getEl('needProfinet').checked,
+                axes: parseInt(getEl('axes').value) || 0, di: parseInt(getEl('di').value) || 0, do: parseInt(getEl('do').value) || 0,
+                doType: document.querySelector('input[name="do_type"]:checked').value, ai: parseInt(getEl('ai').value) || 0, ao: parseInt(getEl('ao').value) || 0,
+                temp: parseInt(getEl('temp').value) || 0, needCAN: getEl('needCAN').checked, needTF: getEl('needTF').checked,
+                needRTC: getEl('needRTC').checked, extraSerial: parseInt(getEl('extraSerial').value) || 0,
+            };
+            const warnings = [], errors = [];
+            let candidatePLCs = plcSeries.filter(plc => {
+                const totalAxes = plc.pulseAxes + plc.busAxes;
+                if (req.needEtherCAT && !plc.hasEtherCAT) return false; if (req.needEthernet && !plc.hasEthernet) return false;
+                if (req.needProfinet && !plc.hasProfinet) return false; if (req.axes > totalAxes) return false;
+                if (req.doType === 'PNP' && plc.doType !== 'PNP') return false;
+                const needsCards = req.needCAN || req.needTF || req.needRTC || req.extraSerial > 0;
+                if (needsCards && plc.maxExtCards === 0) return false;
+                return true;
+            });
+            if (req.doType === 'NPN') candidatePLCs = candidatePLCs.filter(plc => plc.doType === 'NPN');
+            if (candidatePLCs.length === 0) {
+                 errors.push("根据您的核心需求 (如EtherCAT, 以太网, PROFINET, 轴数, 输出类型)，找不到合适的PLC主机。请尝试放宽条件。");
+                 displayResults(null, [], [], warnings, errors); return;
+            }
+            candidatePLCs.sort((a, b) => a.costIndex - b.costIndex);
+            const selectedPLC = candidatePLCs[0];
+            let needed = { di: Math.max(0, req.di - selectedPLC.baseDI), do: Math.max(0, req.do - selectedPLC.baseDO), ai: req.ai, ao: req.ao, temp: req.temp, };
+            const selectedModules = []; let modulesCount = 0;
+            function addModules(type, neededCount, doType = null) {
+                let remaining = neededCount; let candidates = gl20Modules.filter(m => m.type === type && (!doType || m.doType === doType || m.doType === 'Relay')).sort((a, b) => b.count - a.count);
+                while (remaining > 0 && candidates.length > 0) {
+                    const bestModule = candidates.find(m => m.count <= remaining) || candidates[candidates.length - 1];
+                    const numToAdd = (bestModule.count <= remaining) ? Math.floor(remaining / bestModule.count) : 1;
+                    for (let i = 0; i < numToAdd; i++) {
+                        const existing = selectedModules.find(m => m.name === bestModule.name);
+                        if (existing) { existing.quantity++; } else { selectedModules.push({ name: bestModule.name, quantity: 1, description: `${bestModule.count}点${type}` }); }
+                        modulesCount++; remaining -= bestModule.count;
+                    }
+                }
+            }
+            addModules('DI', needed.di); addModules('DO', needed.do, req.doType); addModules('AI', needed.ai); addModules('AO', needed.ao); addModules('TEMP', needed.temp);
+            if (modulesCount > selectedPLC.maxExtModules) errors.push(`I/O需求过大，所需扩展模块 (${modulesCount}) 超过了主机 (${selectedPLC.name}) 的最大限制 (${selectedPLC.maxExtModules}个)。`);
+            const selectedCards = []; let slotAUsed = false, slotBUsed = false;
+            function addCard(card) { const existing = selectedCards.find(c => c.name === card.name); if (existing) { existing.quantity++; } else { selectedCards.push({ name: card.name, quantity: 1, description: card.provides.join(', ') }); } }
+            if (selectedPLC.maxExtCards > 0) {
+                let serialProvided = 0;
+                if (req.needRTC) {
+                    let rtcCard = ge20Cards.find(c => c.name === 'GE20-RTC');
+                    if (req.needTF) rtcCard = ge20Cards.find(c => c.name === 'GE20-TF-RTC'); else if (req.extraSerial > 0) rtcCard = ge20Cards.find(c => c.name === 'GE20-232/485-RTC');
+                    if (rtcCard && rtcCard.slot === 'B' && !slotBUsed) { addCard(rtcCard); slotBUsed = true; if (rtcCard.provides.includes('SERIAL')) serialProvided++; } else if (rtcCard) { errors.push("无法添加RTC功能，B卡槽冲突。"); }
+                }
+                if (req.needCAN) { const canCard = ge20Cards.find(c => c.name === 'GE20-CAN-485'); if (canCard.slot === 'A' && !slotAUsed) { addCard(canCard); slotAUsed = true; if (canCard.provides.includes('SERIAL')) serialProvided++; } else { errors.push("无法添加CAN功能，A卡槽已被占用或主机不兼容。"); } }
+                if (req.needTF && !selectedCards.some(c => c.name.includes('TF'))) { const tfCard = ge20Cards.find(c => c.name === 'GE20-TF'); if (tfCard.slot === 'B' && !slotBUsed) { addCard(tfCard); slotBUsed = true; } else { errors.push("无法添加TF卡功能，B卡槽已被占用或主机不兼容。"); } }
+                let serialNeeded = req.extraSerial - serialProvided;
+                while (serialNeeded > 0) { const serialCard = ge20Cards.find(c => c.name === 'GE20-232/485'); if (!slotAUsed) { addCard(serialCard); slotAUsed = true; serialNeeded--; } else if (!slotBUsed) { addCard(serialCard); slotBUsed = true; serialNeeded--; } else { errors.push(`无法满足所有串口需求，扩展卡槽不足。`); break; } }
+            } else if (req.needCAN || req.needTF || req.needRTC || req.extraSerial > 0) { warnings.push(`您选择了需要扩展卡的功能，但推荐的主机 (${selectedPLC.name}) 不支持扩展卡。已自动为您忽略这些选项。`); }
+            displayResults(selectedPLC, selectedModules, selectedCards, warnings, errors);
+        }
+
+        function displayResults(plc, modules, cards, warnings, errors) {
+            const resultsDiv = getEl('results');
+            const warningsDiv = getEl('warnings');
+            warningsDiv.innerHTML = '';
+            if (errors.length > 0) { warningsDiv.innerHTML = errors.map(e => `<div class="error-banner"><p><strong>配置错误:</strong> ${e}</p></div>`).join(''); resultsDiv.innerHTML = `<div class="text-center text-red-500 py-10 bg-white rounded-xl shadow-lg border h-full flex items-center justify-center"><p>无法生成配置。请根据上方提示调整您的需求。</p></div>`; return; }
+            if (warnings.length > 0) { warningsDiv.innerHTML = warnings.map(w => `<div class="warning-banner"><p><strong>提示:</strong> ${w}</p></div>`).join(''); }
+            if (!plc) { resultsDiv.innerHTML = `<div class="text-center text-gray-500 py-10 bg-white rounded-xl shadow-lg border h-full flex items-center justify-center"><p>请在左侧输入您的需求，或从下方选择一个典型应用场景开始。</p></div>`; return; }
+            
+            const comms = ['RS485']; if(plc.hasEthernet) comms.push('Ethernet'); if(plc.hasEtherCAT) comms.push('EtherCAT'); if(plc.hasProfinet) comms.push('PROFINET');
+            
+            resultsDiv.innerHTML = `
+                <div class="result-card"><h3 class="result-title">主机单元 (PLC)</h3><div class="result-item"><span class="result-item-label font-bold text-lg text-indigo-700">${plc.name}</span><span class="result-item-value">1 台</span></div><div class="p-4 bg-indigo-50 rounded-lg mt-4"><h4 class="font-semibold text-gray-700 mb-2">主机关键规格:</h4><div class="text-sm space-y-2"><div class="spec-item"><span>程序容量</span><span class="font-medium text-gray-800">${plc.programCapacity}</span></div><div class="spec-item"><span>指令速度</span><span class="font-medium text-gray-800">${plc.instructionSpeed}</span></div><div class="spec-item"><span>运动控制能力</span><span class="font-medium text-gray-800">本地${plc.pulseAxes}轴, 总线${plc.busAxes}轴</span></div><div class="spec-item"><span>最大扩展能力</span><span class="font-medium text-gray-800">${plc.maxExtModules}模块, ${plc.maxExtCards}扩展卡</span></div><div class="spec-item"><span>内置通讯接口</span><span class="font-medium text-gray-800">${comms.join(' / ')}</span></div><div class="mt-2 pt-2 border-t border-indigo-100"><p class="text-xs text-indigo-800">${plc.notes}</p></div></div></div></div>
+                <div class="result-card"><h3 class="result-title">物料清单 (BOM)</h3>${modules.length > 0 ? modules.map(m => `<div class="result-item"><span class="result-item-label">${m.name} <span class="text-xs text-gray-400">(${m.description})</span></span><span class="result-item-value">${m.quantity} 台</span></div>`).join('') : '<div class="text-sm text-gray-500">无需扩展模块。</div>'}${cards.length > 0 ? cards.map(c => `<div class="result-item"><span class="result-item-label">${c.name} <span class="text-xs text-gray-400">(${c.description})</span></span><span class="result-item-value">${c.quantity} 个</span></div>`).join('') : '<div class="mt-2 text-sm text-gray-500">无需扩展卡。</div>'}</div>
+                <div class="result-card"><h3 class="result-title">配置总览</h3>${generateSummaryHtml(plc, modules, cards)}</div>
+            `;
+        }
+        
+        function generateSummaryHtml(plc, modules, cards){
+            let totalDI = plc.baseDI, totalDO = plc.baseDO, totalAI = 0, totalAO = 0, totalTemp = 0;
+            modules.forEach(m => {
+                const moduleData = gl20Modules.find(md => md.name === m.name); if(!moduleData) return;
+                if (moduleData.type === 'DI') totalDI += moduleData.count * m.quantity; if (moduleData.type === 'DO') totalDO += moduleData.count * m.quantity;
+                if (moduleData.type === 'AI') totalAI += moduleData.count * m.quantity; if (moduleData.type === 'AO') totalAO += moduleData.count * m.quantity;
+                if (moduleData.type === 'TEMP') totalTemp += moduleData.count * m.quantity; if (moduleData.type === 'MIXED') { totalDI += moduleData.di * m.quantity; totalDO += moduleData.do * m.quantity; }
+            });
+            return `<div class="result-item"><span class="result-item-label">总数字量输入 (DI)</span><span class="result-item-value">${totalDI} 点</span></div><div class="result-item"><span class="result-item-label">总数字量输出 (DO)</span><span class="result-item-value">${totalDO} 点</span></div><div class="result-item"><span class="result-item-label">总模拟量输入 (AI)</span><span class="result-item-value">${totalAI} 点</span></div><div class="result-item"><span class="result-item-label">总模拟量输出 (AO)</span><span class="result-item-value">${totalAO} 点</span></div><div class="result-item"><span class="result-item-label">总温度输入</span><span class="result-item-value">${totalTemp} 点</span></div><div class="result-item"><span class="result-item-label">已用扩展模块槽位</span><span class="result-item-value">${modules.reduce((acc, m) => acc + m.quantity, 0)} / ${plc.maxExtModules}</span></div><div class="result-item"><span class="result-item-label">已用扩展卡槽位</span><span class="result-item-value">${cards.reduce((acc, c) => acc + c.quantity, 0)} / ${plc.maxExtCards}</span></div>`;
+        }
+
+        function applyScenario(scenarioKey) {
+            const scenario = scenarios[scenarioKey];
+            if (!scenario) return;
+            Object.keys(scenario).forEach(key => {
+                const element = getEl(key);
+                if (element) {
+                    if (element.type === 'checkbox' || element.type === 'radio') {
+                        element.checked = scenario[key];
+                    } else {
+                        element.value = scenario[key];
+                    }
+                }
+            });
+            handleProfinetChange(); // This also triggers calculateConfiguration
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- EVENT LISTENERS ---
+        function handleProfinetChange() {
+            if (getEl('needProfinet').checked) { getEl('needEthernet').checked = true; getEl('needEthernet').disabled = true; } 
+            else { getEl('needEthernet').disabled = false; }
+            calculateConfiguration();
+        }
+        document.querySelectorAll('input, select').forEach(input => { input.addEventListener('change', calculateConfiguration); input.addEventListener('keyup', calculateConfiguration); });
+        getEl('needProfinet').addEventListener('change', handleProfinetChange);
+        window.addEventListener('load', calculateConfiguration);
+    </script>
+</body>
+</html>

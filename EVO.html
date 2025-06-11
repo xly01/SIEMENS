@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVO500 PLC 智能选型工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Helvetica Neue', 'Arial', 'sans-serif';
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .step-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease-in-out;
+        }
+        .step-card:hover {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .summary-item {
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .btn-danger {
+            background-color: #dc2626;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-5xl">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">汇川 EVO500系列 PLC 智能选型工具</h1>
+            <p class="mt-2 text-lg text-gray-600">根据您的需求，轻松配置最合适的PLC系统</p>
+        </header>
+
+        <div class="space-y-8">
+            <!-- Step 1: CPU Selection -->
+            <div class="step-card p-6" id="step1">
+                <h2 class="text-2xl font-semibold mb-1">步骤 1: 选择主机 (CPU)</h2>
+                <p class="text-gray-500 mb-6">所有型号均标配 8 路输入 / 8 路输出。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium mb-2">EtherCAT 轴数量</h3>
+                        <div class="space-y-2" id="axis-options">
+                            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-blue-50"><input type="radio" name="axis" value="1" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"> <span class="ml-3">8 轴</span></label>
+                            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-blue-50"><input type="radio" name="axis" value="2" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"> <span class="ml-3">16 轴</span></label>
+                            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-blue-50"><input type="radio" name="axis" value="3" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"> <span class="ml-3">32 轴</span></label>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-medium mb-2">输出类型</h3>
+                        <div class="space-y-2" id="output-type-options">
+                            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-blue-50"><input type="radio" name="output_type" value="TN" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"> <span class="ml-3">NPN (漏型)</span></label>
+                            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-blue-50"><input type="radio" name="output_type" value="TP" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"> <span class="ml-3">PNP (源型)</span></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: GE20 Expansion Cards -->
+            <div class="step-card p-6" id="step2">
+                 <h2 class="text-2xl font-semibold mb-1">步骤 2: 选择 GE20 扩展卡</h2>
+                 <p class="text-gray-500 mb-6">主机最多支持插入2个扩展卡，部分卡有卡槽限制。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="slot-a" class="block font-medium mb-2">卡槽 A</label>
+                        <select id="slot-a" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></select>
+                    </div>
+                    <div>
+                        <label for="slot-b" class="block font-medium mb-2">卡槽 B</label>
+                        <select id="slot-b" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: GL20 Expansion Modules -->
+            <div class="step-card p-6" id="step3">
+                <h2 class="text-2xl font-semibold mb-1">步骤 3: 添加 GL20 本地扩展模块</h2>
+                 <p class="text-gray-500 mb-6">主机最多可连接16个GL20模块。注意本地总线有2A供电限制。</p>
+                <div class="flex flex-col md:flex-row gap-4 items-center">
+                    <select id="gl20-module-select" class="w-full md:flex-1 p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></select>
+                    <button id="add-gl20-module-btn" class="w-full md:w-auto px-6 py-2 rounded-lg btn-primary transition">添加模块</button>
+                </div>
+                <div id="gl20-list" class="mt-6 space-y-2">
+                    <!-- Added modules will appear here -->
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="step-card p-6" id="summary">
+                <h2 class="text-2xl font-semibold mb-4">配置总览与建议</h2>
+                <div id="summary-content" class="space-y-4">
+                    <!-- Summary details will appear here -->
+                    <p class="text-gray-500">请先完成以上步骤以生成配置清单。</p>
+                </div>
+                <div class="mt-6 text-center">
+                     <button id="reset-btn" class="px-8 py-2 rounded-lg btn-secondary transition">重置所有选择</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-12 text-sm text-gray-500">
+            <p>本工具根据《EVO500系列可编程逻辑控制器用户手册-CN-A01》生成。</p>
+            <p>所有规格和编码请以汇川官方最新资料为准。</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // Data based on the user manual
+        const PLC_DATA = {
+            cpus: [
+                { model: 'EVO521-0808TN', axis: '1', type: 'TN', desc: '8轴, NPN', code: '01440863' },
+                { model: 'EVO522-0808TN', axis: '2', type: 'TN', desc: '16轴, NPN', code: '01440864' },
+                { model: 'EVO523-0808TN', axis: '3', type: 'TN', desc: '32轴, NPN', code: '01440642' },
+                { model: 'EVO521-0808TP', axis: '1', type: 'TP', desc: '8轴, PNP', code: '01441008' },
+                { model: 'EVO522-0808TP', axis: '2', type: 'TP', desc: '16轴, PNP', code: '01441009' },
+                { model: 'EVO523-0808TP', axis: '3', type: 'TP', desc: '32轴, PNP', code: '01441007' },
+            ],
+            ge20: [
+                { model: '无', desc: '不使用此卡槽', slot: 'A/B' },
+                { model: 'GE20-4DI', desc: '4路数字量输入', slot: 'A/B' },
+                { model: 'GE20-4DO-TN', desc: '4路数字量输出 (NPN)', slot: 'A/B' },
+                { model: 'GE20-2AD1DA-I', desc: '2AD+1DA (电流型)', slot: 'A/B' },
+                { model: 'GE20-2AD1DA-V', desc: '2AD+1DA (电压型)', slot: 'A/B' },
+                { model: 'GE20-232/485', desc: '1路 RS232/RS485', slot: 'A/B' },
+                { model: 'GE20-232485/-RTC', desc: '1路 RS232/RS485 + RTC', slot: 'B' },
+                { model: 'GE20-TF', desc: 'TF卡 (MicroSD) 扩展', slot: 'B' },
+                { model: 'GE20-RTC', desc: '实时时钟 (RTC)', slot: 'B' },
+            ],
+            gl20: [
+                // Assigning estimated current based on complexity/density for demonstration
+                { model: 'GL20-1600END', desc: '16点DI', current: 150 },
+                { model: 'GL20-0800END', desc: '8点DI', current: 100 },
+                { model: 'GL20-3200END', desc: '32点DI (PUSH IN)', current: 250 },
+                { model: 'GL20-3200END-M', desc: '32点DI (牛角)', current: 250 },
+                { model: 'GL20-0016ETP', desc: '16点DO (PNP)', current: 150 },
+                { model: 'GL20-0016ETN', desc: '16点DO (NPN)', current: 150 },
+                { model: 'GL20-0008ETP', desc: '8点DO (PNP)', current: 100 },
+                { model: 'GL20-0008ETN', desc: '8点DO (NPN)', current: 100 },
+                { model: 'GL20-0032ETN', desc: '32点DO (NPN, PUSH IN)', current: 250 },
+                { model: 'GL20-0032ETN-M', desc: '32点DO (NPN, 牛角)', current: 250 },
+                { model: 'GL20-0008ER', desc: '8点继电器输出', current: 200 },
+                { model: 'GL20-0808ETN', desc: '8DI/8DO (NPN)', current: 180 },
+                { model: 'GL20-3232ETN-M', desc: '32DI/32DO (NPN, 牛角)', current: 250 }, // From manual example
+                { model: 'GL20-4AD', desc: '4路AI (电压/电流)', current: 200 },
+                { model: 'GL20-4DA', desc: '4路AO (电压/电流)', current: 220 },
+                { model: 'GL20-4PT', desc: '4路PT100/PT1000', current: 200 },
+                { model: 'GL20-4TC', desc: '4路热电偶', current: 200 },
+                { model: 'GL20-RTU-ECT', desc: 'EtherCAT耦合器 (≤16模块)', current: 100 },
+                { model: 'GL20-RTU-ECT32', desc: 'EtherCAT耦合器 (≤32模块)', current: 120 },
+            ],
+            LOCAL_BUS_POWER_LIMIT: 2000, // 2A in mA
+            GL20_MODULE_LIMIT: 16
+        };
+
+        // Application State
+        let state = {
+            cpu: null,
+            slotA: null,
+            slotB: null,
+            gl20Modules: [],
+        };
+        
+        // DOM Elements
+        const axisOptions = document.getElementById('axis-options');
+        const outputTypeOptions = document.getElementById('output-type-options');
+        const slotASelect = document.getElementById('slot-a');
+        const slotBSelect = document.getElementById('slot-b');
+        const gl20Select = document.getElementById('gl20-module-select');
+        const addGl20Btn = document.getElementById('add-gl20-module-btn');
+        const gl20ListDiv = document.getElementById('gl20-list');
+        const summaryDiv = document.getElementById('summary-content');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // Functions
+        function populateSelect(selectElement, items, filter = () => true) {
+            selectElement.innerHTML = '';
+            items.filter(filter).forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.model;
+                option.textContent = `${item.model} - ${item.desc}`;
+                selectElement.appendChild(option);
+            });
+        }
+
+        function initialize() {
+            // Populate GE20 Selects
+            populateSelect(slotASelect, PLC_DATA.ge20, item => item.slot.includes('A'));
+            populateSelect(slotBSelect, PLC_DATA.ge20);
+
+            // Populate GL20 Select
+            gl20Select.innerHTML = PLC_DATA.gl20.map(item => `<option value="${item.model}">${item.model} - ${item.desc}</option>`).join('');
+            
+            // Add event listeners
+            axisOptions.addEventListener('change', updateStateAndRender);
+            outputTypeOptions.addEventListener('change', updateStateAndRender);
+            slotASelect.addEventListener('change', updateStateAndRender);
+            slotBSelect.addEventListener('change', updateStateAndRender);
+            addGl20Btn.addEventListener('click', addGl20Module);
+            resetBtn.addEventListener('click', resetAll);
+
+            render();
+        }
+
+        function updateStateAndRender() {
+            const selectedAxis = document.querySelector('input[name="axis"]:checked');
+            const selectedOutputType = document.querySelector('input[name="output_type"]:checked');
+
+            if (selectedAxis && selectedOutputType) {
+                state.cpu = PLC_DATA.cpus.find(c => c.axis === selectedAxis.value && c.type === selectedOutputType.value);
+            } else {
+                state.cpu = null;
+            }
+
+            state.slotA = PLC_DATA.ge20.find(c => c.model === slotASelect.value);
+            state.slotB = PLC_DATA.ge20.find(c => c.model === slotBSelect.value);
+
+            render();
+        }
+
+        function addGl20Module() {
+            if (state.gl20Modules.length >= PLC_DATA.GL20_MODULE_LIMIT) {
+                 // Simple alert for this context. In a real app, use a modal.
+                alert(`最多只能添加 ${PLC_DATA.GL20_MODULE_LIMIT} 个GL20模块。`);
+                return;
+            }
+            const selectedModel = gl20Select.value;
+            const moduleData = PLC_DATA.gl20.find(m => m.model === selectedModel);
+            if (moduleData) {
+                state.gl20Modules.push({ ...moduleData, id: Date.now() }); // Use timestamp for unique ID
+                render();
+            }
+        }
+
+        function removeGl20Module(id) {
+            state.gl20Modules = state.gl20Modules.filter(m => m.id !== id);
+            render();
+        }
+        
+        function resetAll() {
+            state = { cpu: null, slotA: null, slotB: null, gl20Modules: [] };
+            document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+            slotASelect.selectedIndex = 0;
+            slotBSelect.selectedIndex = 0;
+            gl20Select.selectedIndex = 0;
+            render();
+        }
+
+        function render() {
+            renderGl20List();
+            renderSummary();
+        }
+
+        function renderGl20List() {
+            gl20ListDiv.innerHTML = '';
+            if (state.gl20Modules.length === 0) {
+                 gl20ListDiv.innerHTML = '<p class="text-gray-400 text-sm">尚未添加任何模块。</p>';
+            } else {
+                state.gl20Modules.forEach(module => {
+                    const moduleEl = document.createElement('div');
+                    moduleEl.className = 'flex items-center justify-between p-2 bg-gray-100 rounded-lg fade-in';
+                    moduleEl.innerHTML = `
+                        <div>
+                            <p class="font-medium">${module.model}</p>
+                            <p class="text-sm text-gray-600">${module.desc}</p>
+                        </div>
+                        <button class="px-3 py-1 text-sm rounded-md btn-danger transition">移除</button>
+                    `;
+                    moduleEl.querySelector('button').addEventListener('click', () => removeGl20Module(module.id));
+                    gl20ListDiv.appendChild(moduleEl);
+                });
+            }
+        }
+
+        function renderSummary() {
+            summaryDiv.innerHTML = '';
+            let html = '<div class="space-y-3">';
+            let hasContent = false;
+
+            // CPU Summary
+            if (state.cpu) {
+                hasContent = true;
+                html += `
+                    <div class="summary-item pb-3">
+                        <h3 class="font-semibold text-lg">主机 (CPU)</h3>
+                        <p class="flex justify-between"><span>型号:</span> <strong>${state.cpu.model}</strong></p>
+                        <p class="flex justify-between"><span>描述:</span> <span>${state.cpu.desc}</span></p>
+                        <p class="flex justify-between"><span>编码:</span> <span class="font-mono">${state.cpu.code}</span></p>
+                    </div>
+                `;
+            }
+
+            // GE20 Cards Summary
+            if ((state.slotA && state.slotA.model !== '无') || (state.slotB && state.slotB.model !== '无')) {
+                 hasContent = true;
+                html += '<div class="summary-item pt-3 pb-3"><h3 class="font-semibold text-lg">GE20 扩展卡</h3>';
+                if(state.slotA && state.slotA.model !== '无') {
+                     html += `<p class="flex justify-between"><span>卡槽 A:</span> <strong>${state.slotA.model}</strong> (${state.slotA.desc})</p>`;
+                }
+                if(state.slotB && state.slotB.model !== '无') {
+                     html += `<p class="flex justify-between"><span>卡槽 B:</span> <strong>${state.slotB.model}</strong> (${state.slotB.desc})</p>`;
+                }
+                html += '</div>';
+            }
+            
+            // GL20 Modules Summary
+            const totalGl20Modules = state.gl20Modules.length;
+            const totalGl20Current = state.gl20Modules.reduce((sum, m) => sum + m.current, 0);
+
+            if (totalGl20Modules > 0) {
+                 hasContent = true;
+                 html += `<div class="summary-item pt-3 pb-3"><h3 class="font-semibold text-lg">GL20 扩展模块</h3>`;
+                 state.gl20Modules.forEach(m => {
+                    html += `<p class="flex justify-between text-sm"><span>${m.model}</span> <span class="text-gray-500">${m.current}mA</span></p>`;
+                 });
+                 html += `</div>`;
+            }
+            
+            // Validation and Recommendations
+            if(hasContent) {
+                html += '<div class="pt-4"><h3 class="font-semibold text-lg">统计与建议</h3>';
+                // Module Count
+                const moduleCountColor = totalGl20Modules > PLC_DATA.GL20_MODULE_LIMIT ? 'text-red-600' : 'text-green-600';
+                html += `<p class="flex justify-between"><span>GL20模块数量:</span> <strong class="${moduleCountColor}">${totalGl20Modules} / ${PLC_DATA.GL20_MODULE_LIMIT}</strong></p>`;
+
+                // Power Consumption
+                const powerColor = totalGl20Current > PLC_DATA.LOCAL_BUS_POWER_LIMIT ? 'text-red-600' : 'text-green-600';
+                html += `<p class="flex justify-between"><span>总线预估功耗:</span> <strong class="${powerColor}">${totalGl20Current}mA / ${PLC_DATA.LOCAL_BUS_POWER_LIMIT}mA</strong></p>`;
+                html += `<p class="text-xs text-gray-400 mt-1">注意: GL20模块功耗为预估值，仅供参考。</p>`;
+
+                // Recommendations
+                html += '<div class="mt-4 space-y-2">';
+                 if (totalGl20Modules > PLC_DATA.GL20_MODULE_LIMIT) {
+                    html += `<div class="p-3 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-r-lg"><p class="font-bold">错误</p><p>GL20模块数量已超过最大限制 (${PLC_DATA.GL20_MODULE_LIMIT}个)。</p></div>`;
+                 }
+                 if (totalGl20Current > PLC_DATA.LOCAL_BUS_POWER_LIMIT) {
+                    html += `<div class="p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-r-lg"><p class="font-bold">供电建议</p><p>本地总线总电流需求已超过2A，请配置 GL20-PS2 电源模块以确保系统稳定运行。</p></div>`;
+                 }
+                if (totalGl20Modules <= PLC_DATA.GL20_MODULE_LIMIT && totalGl20Current <= PLC_DATA.LOCAL_BUS_POWER_LIMIT) {
+                    html += `<div class="p-3 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-r-lg"><p class="font-bold">配置合规</p><p>当前配置符合基本要求。</p></div>`;
+                }
+
+                html += '</div></div>';
+            } else {
+                 html += '<p class="text-gray-500">请先完成以上步骤以生成配置清单。</p>';
+            }
+
+            html += '</div>';
+            summaryDiv.innerHTML = html;
+        }
+
+        // Initial Load
+        document.addEventListener('DOMContentLoaded', initialize);
+
+    </script>
+</body>
+</html>

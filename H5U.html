@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汇川H5U PLC 交互式选型指南 (含I/O配置)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+            background-color: #f8fafc; /* bg-slate-50 */
+        }
+        .step-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease-in-out;
+        }
+        .result-card {
+            border: 1px solid #e2e8f0; /* border-slate-200 */
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .result-card.recommended {
+            border-color: #3b82f6; /* border-blue-500 */
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+            transform: translateY(-5px);
+        }
+        .result-card h3 {
+            color: #1e3a8a; /* text-blue-900 */
+        }
+        .recommended .badge {
+            background-color: #3b82f6;
+            color: white;
+        }
+        input[type="radio"]:checked + label {
+            background-color: #dbeafe; /* bg-blue-100 */
+            border-color: #3b82f6; /* border-blue-500 */
+            color: #1e40af; /* text-blue-800 */
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: #1f2937; /* bg-gray-800 */
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        /* Custom Watermark Styles */
+        #custom-watermark {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+            z-index: 1000;
+            pointer-events: none; /* Allows clicking through the element */
+            user-select: none; /* Prevents text selection */
+        }
+        #custom-watermark .brand {
+            font-size: 32px;
+            font-weight: 700;
+            color: #009999; /* Official Siemens Teal */
+        }
+        #custom-watermark .credits {
+            font-size: 12px;
+            color: #4A5568; /* a dark gray color */
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div id="custom-watermark">
+        <div class="brand">SIEMENS</div>
+        <div class="credits">制作：谢礼阳 13372509117</div>
+    </div>
+
+    <div class="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+
+        <header class="text-center mb-10">
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">汇川 H5U PLC & I/O 模块交互式选型指南</h1>
+            <p class="mt-3 text-lg text-slate-600">根据您的应用需求，快速找到最合适的 H5U 型号及I/O扩展配置。</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                <!-- PLC Selector -->
+                <div id="step-1-axes" class="step-card p-6">
+                    <div class="flex items-center">
+                        <span class="flex-shrink-0 bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center font-bold">1</span>
+                        <h2 class="ml-4 text-xl font-semibold text-slate-800">运动控制需求</h2>
+                    </div>
+                    <p class="text-sm text-slate-600 mt-3 mb-4">需要控制多少个 **EtherCAT总线** 伺服轴？</p>
+                    <input type="number" id="axes-input" min="0" max="32" value="0" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+                <div id="step-2-can" class="step-card p-6">
+                    <div class="flex items-center">
+                        <span class="flex-shrink-0 bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center font-bold">2</span>
+                        <h2 class="ml-4 text-xl font-semibold text-slate-800">总线通讯需求</h2>
+                    </div>
+                    <p class="text-sm text-slate-600 mt-3 mb-4">是否 **必须** 使用 **CANopen / CANlink** 总线？</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="radio" name="can-bus" id="can-yes" value="yes" class="hidden"><label for="can-yes" class="text-center p-3 border border-slate-300 rounded-md cursor-pointer transition hover:bg-slate-100">是</label>
+                        <input type="radio" name="can-bus" id="can-no" value="no" class="hidden" checked><label for="can-no" class="text-center p-3 border border-slate-300 rounded-md cursor-pointer transition hover:bg-slate-100">否</label>
+                    </div>
+                </div>
+                <div id="step-3-motion" class="step-card p-6">
+                    <div class="flex items-center">
+                        <span class="flex-shrink-0 bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center font-bold">3</span>
+                        <h2 class="ml-4 text-xl font-semibold text-slate-800">高级运动功能</h2>
+                    </div>
+                    <p class="text-sm text-slate-600 mt-3 mb-4">是否 **必须** 使用 **电子凸轮 (E-Cam)** 或 **电子齿轮 (E-Gear)**？</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="radio" name="motion-control" id="motion-yes" value="yes" class="hidden"><label for="motion-yes" class="text-center p-3 border border-slate-300 rounded-md cursor-pointer transition hover:bg-slate-100">是</label>
+                        <input type="radio" name="motion-control" id="motion-no" value="no" class="hidden" checked><label for="motion-no" class="text-center p-3 border border-slate-300 rounded-md cursor-pointer transition hover:bg-slate-100">否</label>
+                    </div>
+                </div>
+
+                <!-- I/O Selector -->
+                <div id="step-4-io" class="step-card p-6">
+                    <div class="flex items-center">
+                        <span class="flex-shrink-0 bg-green-100 text-green-700 w-8 h-8 rounded-full flex items-center justify-center font-bold">4</span>
+                        <h2 class="ml-4 text-xl font-semibold text-slate-800">I/O 扩展需求</h2>
+                    </div>
+                    <p class="text-sm text-slate-600 mt-3 mb-4">输入您系统所需的 **总I/O点数**。系统将自动减去H5U本体自带的16DI/14DO(晶体管)，并计算扩展模块。</p>
+                    <div class="space-y-3">
+                        <div>
+                            <label for="di-input" class="block text-sm font-medium text-slate-700">数字量输入 (DI)</label>
+                            <input type="number" id="di-input" min="0" placeholder="例如: 24" class="mt-1 w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                        <div>
+                            <label for="do-t-input" class="block text-sm font-medium text-slate-700">数字量输出 (晶体管)</label>
+                            <input type="number" id="do-t-input" min="0" placeholder="例如: 20" class="mt-1 w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                         <div>
+                            <label for="do-r-input" class="block text-sm font-medium text-slate-700">数字量输出 (继电器)</label>
+                            <input type="number" id="do-r-input" min="0" placeholder="例如: 8" class="mt-1 w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                        <div>
+                            <label for="ai-input" class="block text-sm font-medium text-slate-700">模拟量输入 (AI)</label>
+                            <input type="number" id="ai-input" min="0" placeholder="例如: 4" class="mt-1 w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                         <div>
+                            <label for="ao-input" class="block text-sm font-medium text-slate-700">模拟量输出 (AO)</label>
+                            <input type="number" id="ao-input" min="0" placeholder="例如: 2" class="mt-1 w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                         <div>
+                            <label for="temp-input" class="block text-sm font-medium text-slate-700">温度输入 (RTD/TC)</label>
+                            <input type="number" id="temp-input" min="0" placeholder="例如: 4" class="mt-1 w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                    </div>
+                    <button id="io-calculate-btn" class="mt-6 w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300">生成模块配置</button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3">
+                <section id="plc-results-section" class="bg-white p-6 rounded-lg shadow-md min-h-[200px] mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4">PLC主机选型推荐</h2>
+                    <div id="plc-results-content" class="transition-opacity duration-500">
+                        <p class="text-slate-500">请在左侧输入您的运动控制及通讯需求。</p>
+                    </div>
+                </section>
+                
+                <section id="io-results-section" class="bg-white p-6 rounded-lg shadow-md min-h-[200px]">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4">I/O模块配置推荐</h2>
+                     <div id="io-results-content" class="transition-opacity duration-500">
+                        <p class="text-slate-500">请在左侧输入总I/O点数并点击“生成模块配置”按钮。</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+        
+        <section id="comparison-table" class="mt-12 bg-white p-6 rounded-lg shadow-lg">
+             <h2 class="text-2xl font-bold text-slate-900 mb-6 text-center">H5U 系列完整规格对比</h2>
+             <div class="overflow-x-auto">
+                 <table class="w-full text-left border-collapse">
+                     <thead>
+                        <tr class="bg-slate-100">
+                            <th class="p-4 font-semibold border-b-2 border-slate-200">特性</th>
+                            <th class="p-4 font-semibold border-b-2 border-slate-200 text-center">H5U-1614MTD-A8S</th>
+                            <th class="p-4 font-semibold border-b-2 border-slate-200 text-center">H5U-1614MTD-A8</th>
+                            <th class="p-4 font-semibold border-b-2 border-slate-200 text-center">H5U-1614MTD-A16</th>
+                            <th class="p-4 font-semibold border-b-2 border-slate-200 text-center">H5U-1614MTD</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr>
+                            <td class="p-4 font-medium">最大EtherCAT总线轴数</td>
+                            <td class="p-4 text-center">8 轴</td>
+                            <td class="p-4 text-center">8 轴</td>
+                            <td class="p-4 text-center">16 轴</td>
+                            <td class="p-4 text-center text-blue-600 font-bold">32 轴</td>
+                        </tr>
+                        <tr class="bg-slate-50">
+                            <td class="p-4 font-medium">CANopen/CANlink 支持</td>
+                            <td class="p-4 text-center text-red-600 font-bold">否</td>
+                            <td class="p-4 text-center text-green-600 font-bold">是</td>
+                            <td class="p-4 text-center text-green-600 font-bold">是</td>
+                            <td class="p-4 text-center text-green-600 font-bold">是</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-medium">电子凸轮/齿轮 支持</td>
+                            <td class="p-4 text-center text-red-600 font-bold">否</td>
+                            <td class="p-4 text-center text-green-600 font-bold">是</td>
+                            <td class="p-4 text-center text-green-600 font-bold">是</td>
+                            <td class="p-4 text-center text-green-600 font-bold">是</td>
+                        </tr>
+                        <tr class="bg-slate-50">
+                            <td class="p-4 font-medium">
+                                <span class="tooltip">
+                                    目标应用场景
+                                    <span class="tooltip-text">这只是典型应用场景建议，具体选择仍需根据您的综合需求判断。</span>
+                                </span>
+                            </td>
+                            <td class="p-4 text-sm text-slate-600">经济型EtherCAT总线控制，简单点位运动</td>
+                            <td class="p-4 text-sm text-slate-600">少轴数，但需高级运动功能或CAN通讯</td>
+                            <td class="p-4 text-sm text-slate-600">中等轴数，需高级运动功能或CAN通讯</td>
+                            <td class="p-4 text-sm text-slate-600">高轴数，复杂机械，精密同步运动控制</td>
+                        </tr>
+                        <tr class="bg-slate-50">
+                            <td colspan="5" class="p-4 text-center font-semibold text-slate-700 bg-slate-200">所有型号共同特性</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-medium">本体I/O</td>
+                            <td colspan="4" class="p-4 text-center text-slate-600">16 DI / 14 DO (晶体管)</td>
+                        </tr>
+                         <tr class="bg-slate-50">
+                            <td class="p-4 font-medium">本地脉冲轴</td>
+                            <td colspan="4" class="p-4 text-center text-slate-600">4 轴 (200kHz)</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-medium">以太网通讯</td>
+                            <td colspan="4" class="p-4 text-center text-slate-600">支持 EtherNet/IP, PROFINET, Modbus TCP</td>
+                        </tr>
+                    </tbody>
+                 </table>
+             </div>
+        </section>
+
+        <footer class="text-center mt-12 text-sm text-slate-500">
+            <p>本工具根据公开的用户手册及产品资料生成，仅供选型参考。</p>
+            <p>最终选型请务必结合最新的官方文档并咨询汇川技术支持。</p>
+        </footer>
+    </div>
+
+<script>
+    // PLC Data
+    const plcData = [
+        { name: 'H5U-1614MTD', axes: 32, can: true, motion: true, description: '功能最全面的旗舰型号，适用于对轴数、同步精度和通讯灵活性要求最高的复杂应用。' },
+        { name: 'H5U-1614MTD-A16', axes: 16, can: true, motion: true, description: '性能与成本的均衡之选，满足中等规模、需要高级功能的自动化设备需求。' },
+        { name: 'H5U-1614MTD-A8', axes: 8, can: true, motion: true, description: '适用于轴数不多，但依然需要CAN总线或精确同步控制的紧凑型应用。' },
+        { name: 'H5U-1614MTD-A8S', axes: 8, can: false, motion: false, description: '高性价比的EtherCAT入门选择，专注于利用总线优势进行点位控制，无复杂功能需求。' }
+    ];
+
+    // I/O Module Data (Based on common GL-series modules)
+    const ioModules = {
+        di: { name: 'GL10-1600E', points: 16, type: '16点 数字量输入' },
+        do_t: { name: 'GL10-0016ET', points: 16, type: '16点 晶体管输出' },
+        do_r: { name: 'GL10-0008ER', points: 8, type: '8点 继电器输出' },
+        ai: { name: 'GL20-4AD', points: 4, type: '4通道 模拟量输入' },
+        ao: { name: 'GL20-4DA', points: 4, type: '4通道 模拟量输出' },
+        temp: { name: 'GL20-4PT/TC', points: 4, type: '4通道 温度输入' }
+    };
+    const PLC_ONBOARD_DI = 16;
+    const PLC_ONBOARD_DO_T = 14;
+    const MAX_EXTENSION_MODULES = 16;
+
+    // PLC Elements
+    const axesInput = document.getElementById('axes-input');
+    const canRadios = document.querySelectorAll('input[name="can-bus"]');
+    const motionRadios = document.querySelectorAll('input[name="motion-control"]');
+    const plcResultsContent = document.getElementById('plc-results-content');
+
+    // I/O Elements
+    const diInput = document.getElementById('di-input');
+    const doTInput = document.getElementById('do-t-input');
+    const doRInput = document.getElementById('do-r-input');
+    const aiInput = document.getElementById('ai-input');
+    const aoInput = document.getElementById('ao-input');
+    const tempInput = document.getElementById('temp-input');
+    const ioCalculateBtn = document.getElementById('io-calculate-btn');
+    const ioResultsContent = document.getElementById('io-results-content');
+
+
+    function updatePlcRecommendation() {
+        const requiredAxes = parseInt(axesInput.value, 10) || 0;
+        const needsCan = document.querySelector('input[name="can-bus"]:checked').value === 'yes';
+        const needsMotion = document.querySelector('input[name="motion-control"]:checked').value === 'yes';
+
+        let filteredPlcs = plcData.filter(plc => {
+            const meetsAxes = plc.axes >= requiredAxes;
+            const meetsCan = needsCan ? plc.can === true : true;
+            const meetsMotion = needsMotion ? plc.motion === true : true;
+            return meetsAxes && meetsCan && meetsMotion;
+        });
+
+        filteredPlcs.sort((a, b) => a.axes - b.axes);
+        renderPlcResults(filteredPlcs, requiredAxes);
+    }
+    
+    function renderPlcResults(plcs, requiredAxes) {
+        plcResultsContent.style.opacity = 0;
+        setTimeout(() => {
+            if (plcs.length === 0) {
+                plcResultsContent.innerHTML = `<div class="text-center p-8 bg-amber-50 border border-amber-200 rounded-lg"><h3 class="text-lg font-semibold text-amber-800">未找到匹配的PLC型号</h3><p class="mt-2 text-amber-700">请尝试放宽您的筛选条件。</p></div>`;
+            } else {
+                let html = '';
+                const bestFit = plcs[0];
+                plcs.forEach((plc, index) => {
+                    const isRecommended = (index === 0);
+                    let badgeText = isRecommended ? '首选推荐' : '备选方案';
+                    let badgeColor = isRecommended ? 'bg-blue-500' : 'bg-slate-400';
+
+                    html += `
+                        <div class="result-card relative bg-white p-5 rounded-lg mb-4 ${isRecommended ? 'recommended' : ''}">
+                            <div class="badge absolute top-0 right-0 -mt-3 -mr-3 text-xs text-white font-semibold px-3 py-1 rounded-full shadow-md ${badgeColor}">${badgeText}</div>
+                            <h3 class="text-lg font-bold">${plc.name}</h3>
+                            <p class="text-sm text-slate-600 mt-2 mb-4">${plc.description}</p>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                                <div class="bg-slate-50 p-2 rounded-md text-center"><span class="block text-xs text-slate-500">EtherCAT轴</span><span class="font-bold text-base">${plc.axes} 轴</span></div>
+                                <div class="bg-slate-50 p-2 rounded-md text-center"><span class="block text-xs text-slate-500">CANopen</span><span class="font-bold text-base ${plc.can ? 'text-green-600' : 'text-red-600'}">${plc.can ? '支持' : '不支持'}</span></div>
+                                <div class="bg-slate-50 p-2 rounded-md text-center"><span class="block text-xs text-slate-500">电子凸轮/齿轮</span><span class="font-bold text-base ${plc.motion ? 'text-green-600' : 'text-red-600'}">${plc.motion ? '支持' : '不支持'}</span></div>
+                            </div>
+                        </div>`;
+                });
+                 plcResultsContent.innerHTML = html;
+            }
+            plcResultsContent.style.opacity = 1;
+        }, 300);
+    }
+
+    function calculateIoConfig() {
+        const requiredDI = parseInt(diInput.value) || 0;
+        const requiredDO_T = parseInt(doTInput.value) || 0;
+        const requiredDO_R = parseInt(doRInput.value) || 0;
+        const requiredAI = parseInt(aiInput.value) || 0;
+        const requiredAO = parseInt(aoInput.value) || 0;
+        const requiredTemp = parseInt(tempInput.value) || 0;
+
+        const neededDI = Math.max(0, requiredDI - PLC_ONBOARD_DI);
+        const neededDO_T = Math.max(0, requiredDO_T - PLC_ONBOARD_DO_T);
+        
+        const config = [];
+        let totalModules = 0;
+
+        const numDI = Math.ceil(neededDI / ioModules.di.points);
+        if (numDI > 0) {
+            config.push({ module: ioModules.di, count: numDI, needed: neededDI });
+            totalModules += numDI;
+        }
+
+        const numDO_T = Math.ceil(neededDO_T / ioModules.do_t.points);
+        if (numDO_T > 0) {
+            config.push({ module: ioModules.do_t, count: numDO_T, needed: neededDO_T });
+            totalModules += numDO_T;
+        }
+
+        const numDO_R = Math.ceil(requiredDO_R / ioModules.do_r.points);
+        if (numDO_R > 0) {
+            config.push({ module: ioModules.do_r, count: numDO_R, needed: requiredDO_R });
+            totalModules += numDO_R;
+        }
+
+        const numAI = Math.ceil(requiredAI / ioModules.ai.points);
+        if (numAI > 0) {
+            config.push({ module: ioModules.ai, count: numAI, needed: requiredAI });
+            totalModules += numAI;
+        }
+        
+        const numAO = Math.ceil(requiredAO / ioModules.ao.points);
+        if (numAO > 0) {
+            config.push({ module: ioModules.ao, count: numAO, needed: requiredAO });
+            totalModules += numAO;
+        }
+
+        const numTemp = Math.ceil(requiredTemp / ioModules.temp.points);
+        if (numTemp > 0) {
+            config.push({ module: ioModules.temp, count: numTemp, needed: requiredTemp });
+            totalModules += numTemp;
+        }
+        
+        renderIoResults(config, totalModules);
+    }
+    
+    function renderIoResults(config, totalModules) {
+        ioResultsContent.style.opacity = 0;
+        setTimeout(() => {
+            if (config.length === 0) {
+                ioResultsContent.innerHTML = `<div class="text-center p-8 bg-green-50 border border-green-200 rounded-lg"><h3 class="text-lg font-semibold text-green-800">无需扩展模块</h3><p class="mt-2 text-green-700">您所需的I/O点数未超过H5U主机自带的点数。</p></div>`;
+            } else {
+                let summaryHtml = `
+                    <div class="mb-4 p-4 bg-slate-50 rounded-lg">
+                        <h4 class="font-bold text-slate-800">配置总览</h4>
+                        <p class="text-sm text-slate-600">总计需要 <span class="font-bold text-blue-600">${totalModules}</span> 个扩展模块。</p>
+                        ${totalModules > MAX_EXTENSION_MODULES ? `<p class="mt-2 text-sm font-bold text-red-600">警告：所需模块总数 (${totalModules}) 已超过H5U最大支持的16个本地扩展模块！请重新规划您的I/O方案。</p>` : ''}
+                    </div>
+                `;
+                
+                let modulesHtml = config.map(item => `
+                    <div class="p-4 border border-slate-200 rounded-lg mb-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-bold text-md text-blue-900">${item.module.name} <span class="text-sm font-normal text-slate-500">(${item.module.type})</span></h4>
+                                <p class="text-xs text-slate-500 mt-1">需求 ${item.needed} 点, 提供 ${item.count * item.module.points} 点</p>
+                            </div>
+                            <div class="bg-blue-100 text-blue-800 font-bold rounded-full px-4 py-1">
+                                x ${item.count}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                ioResultsContent.innerHTML = summaryHtml + modulesHtml + `<p class="mt-4 text-xs text-slate-400">注意: 模块型号及数据基于公开资料，仅供参考，请以汇川官方最新文档为准。</p>`;
+            }
+            ioResultsContent.style.opacity = 1;
+        }, 300);
+    }
+    
+    // Event Listeners
+    axesInput.addEventListener('input', updatePlcRecommendation);
+    canRadios.forEach(radio => radio.addEventListener('change', updatePlcRecommendation));
+    motionRadios.forEach(radio => radio.addEventListener('change', updatePlcRecommendation));
+    ioCalculateBtn.addEventListener('click', calculateIoConfig);
+
+    // Initial Load
+    window.addEventListener('load', () => {
+        updatePlcRecommendation();
+    });
+
+</script>
+
+</body>
+</html>
