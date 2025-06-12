@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>交互式S7-1200配置助手</title>
+    <title>SIEMENS S7-1200 智能配置助手 V2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Chosen Palette: Cool Gray Neutrals -->
-    <!-- Application Structure Plan: 本应用采用一个动态的、分步式的单页仪表板结构来引导用户完成S7-1200的配置过程。这种结构将复杂的选型任务分解为三个逻辑步骤：1) 需求定义, 2) 配置推荐与校验, 3) 物料清单生成。用户在第一步输入所有需求，第二步和第三步的结果会实时动态更新。这种设计使用户可以即时看到其输入变化对最终配置、成本和有效性（如功率和槽位）的影响，从而提供了一个直观、高效且不易出错的交互体验。这比简单地罗列手册内容更能满足用户“通过输入IO点信息生成配置”的核心目标。 -->
-    <!-- Visualization & Content Choices: 关键信息通过多种方式呈现：1) 用户需求通过HTML表单元素（数字输入、下拉选择框）进行收集。2) 配置结果使用动态生成的HTML表格清晰地列出推荐的CPU和模块。3) 关键的有效性校验通过可视化图表进行：功率预算使用Chart.js（Canvas）实现的条形图，直观对比CPU供电能力和模块总消耗；扩展槽位则通过HTML/CSS动态着色的div元素模拟，清晰展示已用和可用槽位。所有交互逻辑由原生JavaScript处理，确保了应用的轻量和高效。这种设计将抽象的技术手册数据转化为直观、可操作的可视化界面。 -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <!-- 
+      V2更新日志:
+      - 核心修正: 选型逻辑现在会优先使用并减去CPU本体自带的I/O点数，然后再计算扩展模块。
+      - 数据库增强: 根据用户提供的资料，添加了DC/DC/Relay型号的CPU，并精确了各CPU的扩展模块(SM)限制。
+      - 逻辑优化: 
+        1. 当需求中包含继电器输出时，算法会智能评估使用继电器型CPU本体或扩展模块的成本。
+        2. 当需求中包含脉冲输出(PTO)时，会自动过滤掉不支持此功能的继电器型CPU。
+      - 校验强化: 严格执行各CPU的物理扩展槽位限制，防止生成无效配置。
+    -->
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -43,7 +48,6 @@
             max-width: 500px;
             margin: auto;
         }
-        /* Siemens Watermark Styles */
         #siemens-watermark {
             position: fixed;
             top: 15px;
@@ -56,7 +60,7 @@
         #siemens-watermark .brand {
             font-size: 52px;
             font-weight: 700;
-            color: #009999; /* Official Siemens Teal */
+            color: #009999;
         }
         #siemens-watermark .credits {
             font-size: 12px;
@@ -67,7 +71,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
 
-    <!-- Siemens Watermark -->
     <div id="siemens-watermark">
         <div class="brand">SIEMENS</div>
         <div class="credits">制作：谢礼阳 OEM Sales 13372509117</div>
@@ -75,7 +78,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-10">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">交互式 S7-1200 配置助手</h1>
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">交互式 S7-1200 配置助手 (V2)</h1>
             <p class="mt-2 text-lg text-slate-600">配置方案仅供参考，谢礼阳 13372509117。</p>
         </header>
 
@@ -92,8 +95,8 @@
                         <h3 class="font-semibold text-lg mb-2 text-slate-700">数字量 I/O</h3>
                         <div class="space-y-3">
                             <div><label class="block text-sm font-medium text-slate-600">数字量输入 (DI) 点数:</label><input type="number" id="di" min="0" value="20" class="form-input"></div>
-                            <div><label class="block text-sm font-medium text-slate-600">数字量输出 (DO) 点数:</label><input type="number" id="do" min="0" value="16" class="form-input"></div>
-                            <div><label class="block text-sm font-medium text-slate-600">其中继电器型DO点数:</label><input type="number" id="do_relay" min="0" value="4" class="form-input"></div>
+                            <div><label class="block text-sm font-medium text-slate-600">数字量输出 (DO) 总点数:</label><input type="number" id="do" min="0" value="16" class="form-input"></div>
+                            <div><label class="block text-sm font-medium text-slate-600">其中, 继电器型DO点数:</label><input type="number" id="do_relay" min="0" value="4" class="form-input"></div>
                         </div>
                     </div>
                     <div>
@@ -208,7 +211,6 @@
                             <tr><td colspan="6" class="p-4 text-center text-slate-500">等待配置生成...</td></tr>
                         </tbody>
                         <tfoot id="bom-footer" class="bg-slate-50 font-bold">
-                            <!-- Total cost will be injected here -->
                         </tfoot>
                     </table>
                 </div>
@@ -217,17 +219,23 @@
     </div>
 
 <script>
-// Data for S7-1200 components, with prices in RMB updated from the user's latest images.
+// S7-1200 Component Database. V2: Added Relay CPUs and corrected SM slot limits.
 const S7_1200_DATA = {
     cpus: [
-        { id: '1211C', name: 'CPU 1211C DC/DC/DC', order: '6ES7211-1AE40-0XB0', di: 6, do_t: 4, do_r: 0, ai: 2, ao: 0, sm: 0, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 100, pto_freq: 100, power: 750, memory: 75, f_cpu: false, price: 1040 },
-        { id: '1212C', name: 'CPU 1212C DC/DC/DC', order: '6ES7212-1AE40-0XB0', di: 8, do_t: 6, do_r: 0, ai: 2, ao: 0, sm: 2, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 100, pto_freq: 100, power: 1000, memory: 100, f_cpu: false, price: 1403 },
-        { id: '1212FC', name: 'CPU 1212FC DC/DC/DC', order: '6ES7212-1AF40-0XB0', di: 8, do_t: 6, do_r: 0, ai: 2, ao: 0, sm: 2, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 100, pto_freq: 100, power: 1000, memory: 150, f_cpu: true, price: 2900 }, // Price not in latest images, kept old value
-        { id: '1214C', name: 'CPU 1214C DC/DC/DC', order: '6ES7214-1AG40-0XB0', di: 14, do_t: 10, do_r: 0, ai: 2, ao: 0, sm: 8, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 100, pto_freq: 100, power: 1600, memory: 150, f_cpu: false, price: 2123 },
-        { id: '1214FC', name: 'CPU 1214FC DC/DC/DC', order: '6ES7214-1AF40-0XB0', di: 14, do_t: 10, do_r: 0, ai: 2, ao: 0, sm: 8, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 100, pto_freq: 100, power: 1600, memory: 200, f_cpu: true, price: 4100 }, // Price not in latest images, kept old value
-        { id: '1215C', name: 'CPU 1215C DC/DC/DC', order: '6ES7215-1AG40-0XB0', di: 14, do_t: 10, do_r: 0, ai: 2, ao: 2, sm: 8, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 1000, pto_freq: 1000, power: 1600, memory: 200, f_cpu: false, price: 3200 },
-        { id: '1215FC', name: 'CPU 1215FC DC/DC/DC', order: '6ES7215-1AF40-0XB0', di: 14, do_t: 10, do_r: 0, ai: 2, ao: 2, sm: 8, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 1000, pto_freq: 1000, power: 1600, memory: 250, f_cpu: true, price: 5400 }, // Price not in latest images, kept old value
-        { id: '1217C', name: 'CPU 1217C DC/DC/DC', order: '6ES7217-1AG40-0XB0', di: 14, do_t: 10, do_r: 0, ai: 2, ao: 2, sm: 8, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 1000, pto_freq: 1000, power: 1600, memory: 250, f_cpu: false, price: 4626 },
+        // --- Standard CPUs (Transistor Output) ---
+        { id: '1211C_DC', name: 'CPU 1211C DC/DC/DC', order: '6ES7211-1AE40-0XB0', di: 6, do_t: 4, do_r: 0, ai: 2, ao: 0, sm: 0, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 100, pto_freq: 100, power: 750, memory: 75, f_cpu: false, price: 1040 },
+        { id: '1212C_DC', name: 'CPU 1212C DC/DC/DC', order: '6ES7212-1AE40-0XB0', di: 8, do_t: 6, do_r: 0, ai: 2, ao: 0, sm: 2, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 100, pto_freq: 100, power: 1000, memory: 100, f_cpu: false, price: 1403 },
+        { id: '1214C_DC', name: 'CPU 1214C DC/DC/DC', order: '6ES7214-1AG40-0XB0', di: 14, do_t: 10, do_r: 0, ai: 2, ao: 0, sm: 8, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 100, pto_freq: 100, power: 1600, memory: 150, f_cpu: false, price: 2123 },
+        { id: '1215C_DC', name: 'CPU 1215C DC/DC/DC', order: '6ES7215-1AG40-0XB0', di: 14, do_t: 10, do_r: 0, ai: 2, ao: 2, sm: 8, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 1000, pto_freq: 1000, power: 1600, memory: 200, f_cpu: false, price: 3200 },
+        { id: '1217C_DC', name: 'CPU 1217C DC/DC/DC', order: '6ES7217-1AG40-0XB0', di: 14, do_t: 10, do_r: 0, ai: 2, ao: 2, sm: 8, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 1000, pto_freq: 1000, power: 1600, memory: 250, f_cpu: false, price: 4626 },
+        // --- Standard CPUs (Relay Output) - Note: Relay CPUs do not support PTO ---
+        { id: '1211C_RLY', name: 'CPU 1211C DC/DC/Relay', order: '6ES7211-1BE40-0XB0', di: 6, do_t: 0, do_r: 4, ai: 2, ao: 0, sm: 0, cm: 3, sb: 1, hsc: 6, pto: 0, hsc_freq: 100, pto_freq: 0, power: 750, memory: 75, f_cpu: false, price: 1100 },
+        { id: '1212C_RLY', name: 'CPU 1212C DC/DC/Relay', order: '6ES7212-1BE40-0XB0', di: 8, do_t: 0, do_r: 6, ai: 2, ao: 0, sm: 2, cm: 3, sb: 1, hsc: 6, pto: 0, hsc_freq: 100, pto_freq: 0, power: 1000, memory: 100, f_cpu: false, price: 1500 },
+        { id: '1214C_RLY', name: 'CPU 1214C DC/DC/Relay', order: '6ES7214-1BG40-0XB0', di: 14, do_t: 0, do_r: 10, ai: 2, ao: 0, sm: 8, cm: 3, sb: 1, hsc: 6, pto: 0, hsc_freq: 100, pto_freq: 0, power: 1600, memory: 150, f_cpu: false, price: 2250 },
+        // --- Failsafe CPUs (Transistor Output) ---
+        { id: '1212FC', name: 'CPU 1212FC DC/DC/DC', order: '6ES7212-1AF40-0XB0', di: 8, do_t: 6, do_r: 0, ai: 2, ao: 0, sm: 2, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 100, pto_freq: 100, power: 1000, memory: 150, f_cpu: true, price: 2900 },
+        { id: '1214FC', name: 'CPU 1214FC DC/DC/DC', order: '6ES7214-1AF40-0XB0', di: 14, do_t: 10, do_r: 0, ai: 2, ao: 0, sm: 8, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 100, pto_freq: 100, power: 1600, memory: 200, f_cpu: true, price: 4100 },
+        { id: '1215FC', name: 'CPU 1215FC DC/DC/DC', order: '6ES7215-1AF40-0XB0', di: 14, do_t: 10, do_r: 0, ai: 2, ao: 2, sm: 8, cm: 3, sb: 1, hsc: 6, pto: 4, hsc_freq: 1000, pto_freq: 1000, power: 1600, memory: 250, f_cpu: true, price: 5400 },
     ],
     modules: [
         { type: 'di', points: 8, name: 'SM 1221, DI 8x24VDC', order: '6ES7221-1BF32-0XB0', power: 105, f_module: false, price: 611 },
@@ -239,7 +247,6 @@ const S7_1200_DATA = {
         { type: 'dido_t', di: 8, do_t: 8, name: 'SM 1223, DI 8/DQ 8x24VDC', order: '6ES7223-1BH32-0XB0', power: 155, f_module: false, price: 976 },
         { type: 'dido_t', di: 16, do_t: 16, name: 'SM 1223, DI 16/DQ 16x24VDC', order: '6ES7223-1BL32-0XB0', power: 180, f_module: false, price: 1545 },
         { type: 'dido_r', di: 8, do_r: 8, name: 'SM 1223, DI 8/DQ 8xRelay', order: '6ES7223-1PH32-0XB0', power: 185, f_module: false, price: 976 },
-        { type: 'dido_r', di: 16, do_r: 16, name: 'SM 1223, DI 16/DQ 16xRelay', order: '6ES7223-1PL32-0XB0', power: 200, f_module: false, price: 1545 },
         { type: 'ai', points: 4, name: 'SM 1231, AI 4x13bit', order: '6ES7231-4HD32-0XB0', power: 80, f_module: false, price: 1260 },
         { type: 'ai', points: 8, name: 'SM 1231, AI 8x13bit', order: '6ES7231-4HF32-0XB0', power: 85, f_module: false, price: 2052 },
         { type: 'ao', points: 2, name: 'SM 1232, AQ 2x14bit', order: '6ES7232-4HB32-0XB0', power: 110, f_module: false, price: 1336 },
@@ -249,74 +256,41 @@ const S7_1200_DATA = {
         { type: 'tc', points: 8, name: 'SM 1231, AI 8xTC', order: '6ES7231-5QF32-0XB0', power: 85, f_module: false, price: 2542 },
         { type: 'rtd', points: 4, name: 'SM 1231, AI 4xRTD', order: '6ES7231-5PD32-0XB0', power: 80, f_module: false, price: 1761 },
         { type: 'rtd', points: 8, name: 'SM 1231, AI 8xRTD', order: '6ES7231-5PF32-0XB0', power: 85, f_module: false, price: 2836 },
-        { type: 'fdi', points: 16, name: 'F-SM 1226, F-DI 16x24VDC', order: '6ES7226-6BA32-0XB0', power: 100, f_module: true, price: 2100 }, // Price not in latest images, kept old value
-        { type: 'fdo', points: 4, name: 'F-SM 1226, F-DQ 4x24VDC', order: '6ES7226-6DA32-0XB0', power: 160, f_module: true, price: 2400 }, // Price not in latest images, kept old value
+        { type: 'fdi', points: 16, name: 'F-SM 1226, F-DI 16x24VDC', order: '6ES7226-6BA32-0XB0', power: 100, f_module: true, price: 2100 },
+        { type: 'fdo', points: 4, name: 'F-SM 1226, F-DQ 4x24VDC', order: '6ES7226-6DA32-0XB0', power: 160, f_module: true, price: 2400 },
         { type: 'cm_rs485', points: 1, name: 'CM 1241, RS422/485', order: '6ES7241-1CH32-0XB0', power: 220, is_cm: true, price: 498 },
-        { type: 'cm_profibus', points: 1, name: 'CM 1243-5, PROFIBUS DP Master', order: '6GK7243-5DX30-0XE0', power: 200, is_cm: true, price: 2900 }, // Price not in latest images, kept old value
+        { type: 'cm_profibus', points: 1, name: 'CM 1243-5, PROFIBUS DP Master', order: '6GK7243-5DX30-0XE0', power: 200, is_cm: true, price: 2900 },
     ]
 };
 
 let powerChart;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Attach event listener to the form to trigger updates on any input change.
     const form = document.getElementById('config-form');
     form.addEventListener('input', updateConfiguration);
+    initializeChart();
+    updateConfiguration();
+});
 
-    // Initialize the power budget chart using Chart.js.
+function initializeChart() {
     const ctx = document.getElementById('power-chart').getContext('2d');
     powerChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: ['功率预算 (mA)'],
             datasets: [
-                {
-                    label: 'CPU 供电能力',
-                    data: [0],
-                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: '模块总消耗',
-                    data: [0],
-                    backgroundColor: 'rgba(239, 68, 68, 0.5)',
-                    borderColor: 'rgba(239, 68, 68, 1)',
-                    borderWidth: 1
-                }
+                { label: 'CPU 供电能力', data: [0], backgroundColor: 'rgba(59, 130, 246, 0.5)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1 },
+                { label: '模块总消耗', data: [0], backgroundColor: 'rgba(239, 68, 68, 0.5)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 }
             ]
         },
         options: {
-            maintainAspectRatio: false,
-            responsive: true,
-            indexAxis: 'y',
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'mA' }
-                }
-            },
-            plugins: {
-                legend: { position: 'top' },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) { label += ': '; }
-                            if (context.parsed.x !== null) { label += context.parsed.x + ' mA'; }
-                            return label;
-                        }
-                    }
-                }
-            }
+            maintainAspectRatio: false, responsive: true, indexAxis: 'y',
+            scales: { x: { beginAtZero: true, title: { display: true, text: 'mA' } } },
+            plugins: { legend: { position: 'top' } }
         }
     });
+}
 
-    // Run the configuration on initial page load.
-    updateConfiguration();
-});
-
-// Gathers all user-defined requirements from the form.
 function getInputs() {
     const reserve = 1 + (parseInt(document.getElementById('expansion_reserve').value) / 100);
     const do_total = parseInt(document.getElementById('do').value) || 0;
@@ -324,13 +298,13 @@ function getInputs() {
     
     if (do_relay > do_total) {
         document.getElementById('do_relay').value = do_total;
-        return getInputs(); // Recalculate with corrected value.
+        return getInputs(); 
     }
 
     return {
         di: Math.ceil((parseInt(document.getElementById('di').value) || 0) * reserve),
+        do_relay: Math.ceil(do_relay * reserve),
         do_t: Math.ceil((do_total - do_relay) * reserve),
-        do_r: Math.ceil(do_relay * reserve),
         ai: Math.ceil((parseInt(document.getElementById('ai').value) || 0) * reserve),
         ao: Math.ceil((parseInt(document.getElementById('ao').value) || 0) * reserve),
         tc: Math.ceil((parseInt(document.getElementById('tc').value) || 0) * reserve),
@@ -343,180 +317,134 @@ function getInputs() {
     };
 }
 
-/**
- * OPTIMIZATION: Finds the most economical combination of modules for a given number of I/O points.
- * This function uses dynamic programming to solve the "unbounded knapsack" or "change-making" problem,
- * ensuring the lowest possible cost, which is superior to a simple greedy algorithm.
- * @param {number} target - The number of points required.
- * @param {Array<Object>} modules - The list of available modules of a specific type.
- * @returns {{cost: number, combination: Array<Object>}} - The minimum cost and the list of modules.
- */
-function findBestCombination(target, modules) {
-    if (target <= 0) return { cost: 0, combination: [] };
-
-    const maxPoints = Math.max(...modules.map(m => m.points || m.di || 0));
-    const dpSize = target + maxPoints;
-
-    let dp = new Array(dpSize).fill(Infinity);
-    let path = new Array(dpSize).fill(null);
-    dp[0] = 0;
-
-    for (let i = 1; i < dpSize; i++) {
-        for (const module of modules) {
-            const modulePoints = module.points || module.di || 0; // Handle different point properties
-            const prevIndex = Math.max(0, i - modulePoints);
-            if (dp[prevIndex] === Infinity) continue;
-            
-            const newCost = dp[prevIndex] + module.price;
-            if (newCost < dp[i]) {
-                dp[i] = newCost;
-                path[i] = module;
-            }
-        }
-    }
-
-    let bestCost = Infinity;
-    let bestIndex = -1;
-    for (let i = target; i < dpSize; i++) {
-        if (dp[i] < bestCost) {
-            bestCost = dp[i];
-            bestIndex = i;
-        }
-    }
-
-    if (bestIndex === -1) return { cost: Infinity, combination: [] };
-
-    let combination = [];
-    let currentIndex = bestIndex;
-    while (currentIndex > 0 && path[currentIndex]) {
-        const module = path[currentIndex];
-        combination.push(module);
-        const modulePoints = module.points || module.di || 0;
-        currentIndex = Math.max(0, currentIndex - modulePoints);
-    }
-    
-    return { cost: bestCost, combination: combination };
-}
-
-
-// Main function to calculate and update the configuration based on inputs.
 function updateConfiguration() {
     const needs = getInputs();
+    let errorMessages = [];
     
-    const potentialCpus = S7_1200_DATA.cpus.filter(cpu => 
-        cpu.hsc >= needs.hsc && 
-        cpu.pto >= needs.pto &&
-        cpu.f_cpu === needs.fail_safe
-    );
+    // Filter CPUs based on hard constraints (F-CPU, HSC, PTO).
+    const potentialCpus = S7_1200_DATA.cpus.filter(cpu => {
+        if (cpu.f_cpu !== needs.fail_safe) return false;
+        if (cpu.hsc < needs.hsc) return false;
+        // Critical check: Relay CPUs do not support PTO.
+        if (needs.pto > 0 && cpu.pto === 0) return false;
+        if (cpu.pto < needs.pto) return false;
+        return true;
+    });
 
     if (potentialCpus.length === 0) {
-        renderResults(null, [], 0, [`找不到满足基本功能需求的CPU (HSC/PTO/Fail-Safe).`]);
+        errorMessages.push(`找不到满足基本功能需求的CPU (HSC/PTO/Fail-Safe)。请检查您的需求，特别是当需要PTO时，不能选择继电器型CPU。`);
+        renderResults(null, [], errorMessages);
         return;
     }
 
     let bestConfig = null;
 
-    // Iterate through each potential CPU to find the absolute most cost-effective valid configuration.
+    // Iterate through each potential CPU to find the most cost-effective valid configuration.
     for (const cpu of potentialCpus) {
         let currentModules = [];
-        let costOfModules = 0;
-        let tempError = [];
+        let tempErrors = [];
 
-        let remaining = {
-            di: needs.di - cpu.di,
-            do_t: needs.do_t - cpu.do_t,
-            do_r: needs.do_r - (cpu.do_r || 0),
-            ai: needs.ai - cpu.ai,
-            ao: needs.ao - cpu.ao,
-            tc: needs.tc,
-            rtd: needs.rtd,
-        };
+        // --- CORE LOGIC V2: Account for CPU's onboard I/O first ---
+        let remaining = { ...needs };
         
-        // Add required communication modules
+        // Account for DI, AI, AO
+        remaining.di -= cpu.di || 0;
+        remaining.ai -= cpu.ai || 0;
+        remaining.ao -= cpu.ao || 0;
+
+        // Account for DO (Digital Outputs) with type considerations
+        let needed_relay = remaining.do_relay;
+        let needed_transistor = remaining.do_t;
+        const cpu_provides_relay = cpu.do_r || 0;
+        const cpu_provides_transistor = cpu.do_t || 0;
+
+        // Use CPU relays for relay needs
+        const from_cpu_relay_for_relay = Math.min(needed_relay, cpu_provides_relay);
+        needed_relay -= from_cpu_relay_for_relay;
+
+        // Use CPU transistors for transistor needs
+        const from_cpu_transistor_for_transistor = Math.min(needed_transistor, cpu_provides_transistor);
+        needed_transistor -= from_cpu_transistor_for_transistor;
+        
+        // Use leftover CPU relays for transistor needs (relays can be used for transistor-level tasks)
+        const leftover_cpu_relay = cpu_provides_relay - from_cpu_relay_for_relay;
+        const from_cpu_relay_for_transistor = Math.min(needed_transistor, leftover_cpu_relay);
+        needed_transistor -= from_cpu_relay_for_transistor;
+
+        // Update remaining needs for modules
+        remaining.do_relay = needed_relay;
+        remaining.do_t = needed_transistor;
+        // --- End of Core Logic V2 ---
+
+        // Add required communication modules.
+        let needed_cm = 0;
         if (needs.comm_rs485) {
-            const mod = S7_1200_DATA.modules.find(m => m.type === 'cm_rs485');
-            currentModules.push(mod);
-            costOfModules += mod.price;
+            currentModules.push(S7_1200_DATA.modules.find(m => m.type === 'cm_rs485'));
+            needed_cm++;
         }
         if (needs.comm_profibus) {
-            const mod = S7_1200_DATA.modules.find(m => m.type === 'cm_profibus');
-            currentModules.push(mod);
-            costOfModules += mod.price;
-        }
-
-        if (currentModules.filter(m => m.is_cm).length > cpu.cm) {
-            continue; // This CPU doesn't have enough communication slots.
-        }
-
-        // Define the mapping of needs to module types.
-        const ioNeedsMap = [
-            { need: 'di', type: needs.fail_safe ? 'fdi' : 'di' },
-            { need: 'do_t', type: needs.fail_safe ? 'fdo' : 'do_t' },
-            { need: 'do_r', type: 'do_r' },
-            { need: 'ai', type: 'ai' },
-            { need: 'ao', type: 'ao' },
-            { need: 'tc', type: 'tc' },
-            { need: 'rtd', type: 'rtd' },
-        ];
-
-        // Fulfill each I/O need using the optimized combination function.
-        for (const mapping of ioNeedsMap) {
-            const target = remaining[mapping.need];
-            if (target <= 0) continue;
-
-            // Handle cases where F-safe modules are needed but not available in our data
-            if (needs.fail_safe && !['fdi', 'fdo'].includes(mapping.type)) {
-                tempError.push(`找不到满足 ${mapping.need.toUpperCase()} 需求的故障安全模块。`);
-                continue;
-            }
-            
-            const availableModules = S7_1200_DATA.modules.filter(m => m.type === mapping.type || m.type === `dido_${mapping.type.split('_')[1]}`);
-            
-            if (availableModules.length > 0) {
-                 // **OPTIMIZATION LOGIC**: Use dynamic programming to find the cheapest module mix.
-                const result = findBestCombination(target, availableModules);
-                if (result.cost === Infinity) {
-                    tempError.push(`无法满足 ${target} 点 ${mapping.need.toUpperCase()} 的需求。`);
-                } else {
-                    costOfModules += result.cost;
-                    currentModules.push(...result.combination);
-                }
-            } else if (target > 0) {
-                 tempError.push(`数据库中缺少类型为 ${mapping.type} 的模块。`);
-            }
+            currentModules.push(S7_1200_DATA.modules.find(m => m.type === 'cm_profibus'));
+            needed_cm++;
         }
         
-        if (tempError.length > 0) continue;
+        if (needed_cm > cpu.cm) {
+            continue; // CPU doesn't support this many CMs, try next CPU
+        }
+        
+        // Function to add a specific type of I/O module to fulfill a need.
+        const addModule = (type, prop) => {
+            let modulesOfType = S7_1200_DATA.modules
+                .filter(m => m.type === type && (m.f_module ? needs.fail_safe : !needs.fail_safe))
+                .sort((a, b) => (a.price / a.points) - (b.price / b.points)); // cost-effective sort
+            
+            while (remaining[prop] > 0 && modulesOfType.length > 0) {
+                let module = modulesOfType[0]; // Choose cheapest per point
+                currentModules.push(module);
+                remaining[prop] -= module.points;
+            }
+        };
 
-        // Validate final configuration against slot and power limits.
-        let sm_count = currentModules.filter(m => !m.is_cm).length;
+        // Select modules for any remaining I/O needs.
+        if (needs.fail_safe) {
+            addModule('fdi', 'di');
+            addModule('fdo', 'do_t'); // Assuming F-DO are transistor based
+        } else {
+            addModule('di', 'di');
+            addModule('do_t', 'do_t');
+            addModule('do_r', 'do_relay');
+            addModule('ai', 'ai');
+            addModule('ao', 'ao');
+            addModule('tc', 'tc');
+            addModule('rtd', 'rtd');
+        }
+        
+        // Validate slot and power constraints.
+        const sm_count = currentModules.filter(m => !m.is_cm).length;
         if (sm_count > cpu.sm) {
-            continue;
+            continue; // Exceeds SM slots, try next CPU
         }
 
         const totalPower = currentModules.reduce((sum, m) => sum + m.power, 0);
         if (totalPower > cpu.power) {
-            continue;
+            continue; // Exceeds power budget, try next CPU
         }
 
-        // If this configuration is valid, check if it's the most economical one found so far.
-        const currentTotalCost = cpu.price + costOfModules;
-        if (!bestConfig || currentTotalCost < bestConfig.cost) {
-            bestConfig = { cpu, modules: currentModules, cost: currentTotalCost, errors: [] };
+        // If this configuration is valid, check if it's the best one found so far (cheapest).
+        const currentCost = cpu.price + currentModules.reduce((sum, m) => sum + m.price, 0);
+        if (!bestConfig || currentCost < bestConfig.cost) {
+            bestConfig = { cpu: cpu, modules: currentModules, cost: currentCost, errors: [] };
         }
     }
     
-    // Render the final results.
     if (bestConfig) {
-        renderResults(bestConfig.cpu, bestConfig.modules, bestConfig.cost, bestConfig.errors);
+        renderResults(bestConfig.cpu, bestConfig.modules, bestConfig.errors);
     } else {
-        renderResults(null, [], 0, [`无法为您的需求找到一个有效的配置。请尝试调整需求或选择更高阶的PLC系列。`]);
+        errorMessages.push(`无法为您的需求找到一个有效的配置。请尝试调整需求或检查是否存在矛盾（如：选择了不支持扩展的CPU但需要大量IO点）。`);
+        renderResults(null, [], errorMessages);
     }
 }
 
-
-// Renders the calculated configuration to the UI.
-function renderResults(cpu, modules, totalCost, errors) {
+function renderResults(cpu, modules, errors) {
     const validationSummaryEl = document.getElementById('validation-summary');
     const cpuResultEl = document.getElementById('cpu-result');
     const modulesResultEl = document.getElementById('modules-result');
@@ -529,12 +457,16 @@ function renderResults(cpu, modules, totalCost, errors) {
     bomTableEl.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">等待配置生成...</td></tr>';
     bomFooterEl.innerHTML = '';
 
-    if (errors.length > 0) {
+    if (errors && errors.length > 0) {
         validationSummaryEl.className = 'error-message p-4 rounded-lg';
-        validationSummaryEl.innerHTML = `<strong>配置错误:</strong><ul class="list-disc list-inside mt-2">${errors.map(e => `<li>${e}</li>`).join('')}</ul>`;
+        validationSummaryEl.innerHTML = `<strong>配置警告:</strong><ul class="list-disc list-inside mt-2">${errors.map(e => `<li>${e}</li>`).join('')}</ul>`;
     }
 
     if (!cpu) {
+        if(errors && errors.length > 0) {
+             validationSummaryEl.className = 'error-message p-4 rounded-lg';
+             validationSummaryEl.innerHTML = `<strong>配置错误:</strong><ul class="list-disc list-inside mt-2">${errors.map(e => `<li>${e}</li>`).join('')}</ul>`;
+        }
         cpuResultEl.innerHTML = '-';
         modulesResultEl.innerHTML = '-';
         slotsResultEl.innerHTML = '<p class="text-sm text-slate-500">等待输入...</p>';
@@ -552,7 +484,7 @@ function renderResults(cpu, modules, totalCost, errors) {
     // Validation Summary
     if (errors.length === 0) {
         validationSummaryEl.className = 'success-message p-4 rounded-lg';
-        validationSummaryEl.innerHTML = '<strong>配置校验通过!</strong> 已为您找到最经济的有效硬件组合。';
+        validationSummaryEl.innerHTML = '<strong>配置校验通过!</strong> 这是一个基于您需求的有效且经济的硬件组合。';
     }
 
     // Recommended Hardware
@@ -567,7 +499,7 @@ function renderResults(cpu, modules, totalCost, errors) {
     if (Object.keys(moduleCounts).length > 0) {
         modulesResultEl.innerHTML = Object.values(moduleCounts).map(m => `<div class="text-sm">${m.count}x ${m.name} (${m.order})</div>`).join('');
     } else {
-        modulesResultEl.innerHTML = '<span class="text-sm text-slate-500">无需额外模块。</span>';
+        modulesResultEl.innerHTML = '<span class="text-sm text-slate-500">CPU本体IO已满足需求，无需扩展模块。</span>';
     }
     
     // Validation Details: Slots
@@ -575,8 +507,8 @@ function renderResults(cpu, modules, totalCost, errors) {
     slotsHtml += `<div class="p-2 bg-blue-200 text-blue-800 rounded text-xs font-mono">CPU</div>`;
     for(let i=0; i < sm_count; i++) slotsHtml += `<div class="p-2 bg-green-200 text-green-800 rounded text-xs font-mono">SM</div>`;
     for(let i=0; i < cpu.sm - sm_count; i++) slotsHtml += `<div class="p-2 bg-slate-200 text-slate-500 rounded text-xs font-mono">空闲</div>`;
-    slotsHtml += `</div><p class="text-xs text-slate-500 mt-2">已用信号模块槽位: ${sm_count} / ${cpu.sm}</p>`;
-    slotsHtml += `<p class="text-xs text-slate-500 mt-1">已用通信模块槽位: ${cm_count} / ${cpu.cm}</p>`;
+    slotsHtml += `</div><p class="text-xs text-slate-500 mt-2">已用信号模块(SM)槽位: ${sm_count} / ${cpu.sm}</p>`;
+    slotsHtml += `<p class="text-xs text-slate-500 mt-1">已用通信模块(CM)槽位: ${cm_count} / ${cpu.cm}</p>`;
     slotsResultEl.innerHTML = slotsHtml;
 
     // Validation Details: Power Chart Update
@@ -587,6 +519,7 @@ function renderResults(cpu, modules, totalCost, errors) {
     
     // BOM Table
     let bomHtml = '';
+    const totalCost = cpu.price + Object.values(moduleCounts).reduce((sum, m) => sum + (m.price * m.count), 0);
     // CPU Row
     bomHtml += `<tr>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">CPU</td>
@@ -625,3 +558,5 @@ function renderResults(cpu, modules, totalCost, errors) {
 
 </body>
 </html>
+```
+
