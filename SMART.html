@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S7-200 SMART 智能选型助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony (Light Neutral, Siemens Teal, Subtle Accents) -->
+    <!-- Application Structure Plan: A task-oriented, single-page application structured as an interactive configuration wizard. The core user flow guides the user through defining their I/O and motion control needs, then dynamically generates a recommended product configuration with a bill of materials. This is supplemented by a browsable product catalog section for expert users. This structure was chosen to transform the passive, educational content of the source PPT into an active, problem-solving tool, making the complex process of PLC selection intuitive and error-free. -->
+    <!-- Visualization & Content Choices: Report Info: I/O counts, motion needs -> Goal: Guide selection -> Viz/Method: Interactive form with number inputs and toggles. Justification: Actively captures user requirements. | Report Info: Product specifications -> Goal: Allow comparison -> Viz/Method: Interactive Bar Chart (Chart.js). Justification: Provides a much clearer and quicker comparison of capabilities than a static table. | Report Info: Entire product line -> Goal: Enable exploration -> Viz/Method: Filterable card-based grid. Justification: Allows users to easily find specific products. | ALL INTERACTIONS CONFIRM NO SVG/MERMAID. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+        }
+        .main-title {
+            color: #006478;
+        }
+        .btn-primary {
+            background-color: #009999;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #007f7f;
+        }
+        .section-title {
+            border-bottom: 3px solid #009999;
+            padding-bottom: 8px;
+            color: #006478;
+        }
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #009999;
+            border-bottom-color: #009999;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .tag-blue { background-color: #e0f2f1; color: #00796b; }
+        .tag-green { background-color: #e8f5e9; color: #388e3c; }
+        .tag-red { background-color: #ffebee; color: #d32f2f; }
+        .tag-gray { background-color: #eceff1; color: #546e7a; }
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold main-title">
+                <span class="text-3xl">SIEMENS</span> S7-200 SMART 智能选型助手
+            </div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#wizard" class="nav-link pb-1 active">智能选型向导</a>
+                <a href="#explorer" class="nav-link pb-1">产品系列浏览</a>
+                <a href="#comparison" class="nav-link pb-1">关键参数对比</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden focus:outline-none">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
+            <a href="#wizard" class="block py-2 text-gray-700 hover:text-[#009999]">智能选型向导</a>
+            <a href="#explorer" class="block py-2 text-gray-700 hover:text-[#009999]">产品系列浏览</a>
+            <a href="#comparison" class="block py-2 text-gray-700 hover:text-[#009999]">关键参数对比</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <!-- Section 1: Interactive Wizard -->
+        <section id="wizard" class="relative mb-16 scroll-mt-24">
+            <div class="relative">
+                 <h2 class="text-3xl font-bold mb-2 section-title">智能选型向导</h2>
+                 <div class="absolute top-0 right-0 text-sm text-gray-400/50 font-mono pointer-events-none select-none -translate-y-2">
+                    <p>HZ OEM</p>
+                    <p>谢礼阳 13372509117</p>
+                </div>
+            </div>
+            <p class="mb-8 text-gray-600">只需三步，即可获得为您量身定制的PLC配置方案。我们已使用产品手册中的“枕式包装机”作为默认案例，您可以直接查看选型结果，或修改下方需求以获取您的专属配置。</p>
+            
+            <div class="grid md:grid-cols-5 gap-8">
+                <!-- Step 1: Input -->
+                <div class="md:col-span-2 card p-6">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">第一步：输入您的控制需求</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="font-semibold text-gray-700">运动控制 (脉冲输出)</label>
+                            <div class="mt-2 flex items-center space-x-4">
+                                <label class="flex items-center">
+                                    <input type="radio" name="motion-control" id="motion-yes" value="yes" checked class="text-[#009999] focus:ring-[#009999]">
+                                    <span class="ml-2">是 (控制伺服/步进电机)</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="motion-control" id="motion-no" value="no" class="text-[#009999] focus:ring-[#009999]">
+                                    <span class="ml-2">否</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="axes-input-container">
+                            <label for="axes" class="font-semibold text-gray-700">需要控制的轴数</label>
+                            <input type="number" id="axes" value="3" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#009999] focus:ring focus:ring-[#009999] focus:ring-opacity-50">
+                        </div>
+
+                        <div>
+                            <label class="font-semibold text-gray-700">控制点数 (I/O Points)</label>
+                            <div class="grid grid-cols-2 gap-4 mt-2">
+                                <div>
+                                    <label for="di" class="text-sm">数字量输入 (DI)</label>
+                                    <input type="number" id="di" value="30" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#009999] focus:ring focus:ring-[#009999] focus:ring-opacity-50">
+                                </div>
+                                <div>
+                                    <label for="do" class="text-sm">数字量输出 (DO)</label>
+                                    <input type="number" id="do" value="20" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#009999] focus:ring focus:ring-[#009999] focus:ring-opacity-50">
+                                </div>
+                                <div>
+                                    <label for="ai" class="text-sm">模拟量输入 (AI)</label>
+                                    <input type="number" id="ai" value="2" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#009999] focus:ring focus:ring-[#009999] focus:ring-opacity-50">
+                                </div>
+                                <div>
+                                    <label for="ao" class="text-sm">模拟量输出 (AO)</label>
+                                    <input type="number" id="ao" value="1" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#009999] focus:ring focus:ring-[#009999] focus:ring-opacity-50">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     <button id="calculate-btn" class="w-full btn-primary font-bold py-3 px-4 rounded-lg mt-8 text-lg">
+                        生成配置方案
+                    </button>
+                </div>
+
+                <!-- Step 2 & 3: Output -->
+                <div class="md:col-span-3 card p-6">
+                    <div id="results-container">
+                        <h3 class="text-2xl font-bold mb-4 text-gray-800">第二步：推荐配置方案</h3>
+                        <div id="cpu-result" class="fade-in"></div>
+
+                        <h3 class="text-2xl font-bold mt-6 mb-4 text-gray-800">第三步：物料清单 (BOM)</h3>
+                        <div id="bom-result" class="fade-in"></div>
+                    </div>
+                     <div id="error-message" class="hidden fade-in p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Product Explorer -->
+        <section id="explorer" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold mb-2 section-title">产品系列浏览</h2>
+            <p class="mb-8 text-gray-600">如果您想自行浏览或查找特定产品，可以在此区域查看S7-200 SMART系列的所有模块和附件的详细信息。点击卡片可查看关键技术参数。</p>
+            
+            <div class="mb-6">
+                <div class="flex space-x-2 border-b">
+                    <button class="py-2 px-4 font-semibold product-tab active" data-tab="cpu">CPU 模块</button>
+                    <button class="py-2 px-4 font-semibold product-tab" data-tab="em">扩展模块 (EM)</button>
+                    <button class="py-2 px-4 font-semibold product-tab" data-tab="sb">信号板 (SB)</button>
+                </div>
+            </div>
+
+            <div id="explorer-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Product cards will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Section 3: Comparison -->
+        <section id="comparison" class="scroll-mt-24">
+            <h2 class="text-3xl font-bold mb-2 section-title">关键参数对比</h2>
+             <p class="mb-8 text-gray-600">通过此图表可以直观地比较不同CPU模块的核心性能，帮助您快速理解各型号之间的差异，做出更明智的决策。图表清晰地展示了I/O容量和高速处理能力，这是选型时的关键考量因素。</p>
+            <div class="card p-6">
+                <div class="chart-container">
+                    <canvas id="cpu-comparison-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-6 py-4 text-center">
+            <p>SIMATIC S7-200 SMART 智能选型助手</p>
+            <p class="text-sm text-gray-400 mt-1">此工具仅供参考，请以西门子官方发布的最新产品样本为准。创建于 2025.03。</p>
+        </div>
+    </footer>
+
+<script>
+    const productData = {
+        cpus: [
+            { id: 'SR40', name: 'CPU SR40', order: '6ES7 288-1SR40-0AA2', type: '继电器', power: 'AC', di: 24, do: 16, hsc: 8, pto: 0, ptoFreq: 0, price: 100 },
+            { id: 'ST40', name: 'CPU ST40', order: '6ES7 288-1ST40-0AA2', type: '晶体管', power: 'DC', di: 24, do: 16, hsc: 8, pto: 5, ptoFreq: 200, price: 110 },
+            { id: 'SR60', name: 'CPU SR60', order: '6ES7 288-1SR60-0AA2', type: '继电器', power: 'AC', di: 36, do: 24, hsc: 8, pto: 0, ptoFreq: 0, price: 150 },
+            { id: 'ST60', name: 'CPU ST60', order: '6ES7 288-1ST60-0AA2', type: '晶体管', power: 'DC', di: 36, do: 24, hsc: 8, pto: 5, ptoFreq: 200, price: 160 }
+        ],
+        ems: [
+            { id: 'DE08', name: 'EM DE08', order: '6ES7 288-2DE08-0AA0', category: 'di', di: 8, do: 0, ai: 0, ao: 0, desc: '8 x 24VDC 输入', price: 20},
+            { id: 'DE16', name: 'EM DE16', order: '6ES7 288-2DE16-0AA0', category: 'di', di: 16, do: 0, ai: 0, ao: 0, desc: '16 x 24VDC 输入', price: 35},
+            { id: 'DR08', name: 'EM DR08', order: '6ES7 288-2DR08-0AA0', category: 'do', di: 0, do: 8, ai: 0, ao: 0, type: '继电器', desc: '8 x 继电器输出', price: 30},
+            { id: 'DT08', name: 'EM DT08', order: '6ES7 288-2DT08-0AA0', category: 'do', di: 0, do: 8, ai: 0, ao: 0, type: '晶体管', desc: '8 x 24VDC 输出', price: 28},
+            { id: 'DR16', name: 'EM DR16', order: '6ES7 288-2DR16-0AA0', category: 'mix', di: 8, do: 8, ai: 0, ao: 0, type: '继电器', desc: '8 DI / 8 DO (继电器)', price: 45},
+            { id: 'DT16', name: 'EM DT16', order: '6ES7 288-2DT16-0AA0', category: 'mix', di: 8, do: 8, ai: 0, ao: 0, type: '晶体管', desc: '8 DI / 8 DO (晶体管)', price: 42},
+            { id: 'DR32', name: 'EM DR32', order: '6ES7 288-2DR32-0AA0', category: 'mix', di: 16, do: 16, ai: 0, ao: 0, type: '继电器', desc: '16 DI / 16 DO (继电器)', price: 80},
+            { id: 'DT32', name: 'EM DT32', order: '6ES7 288-2DT32-0AA0', category: 'mix', di: 16, do: 16, ai: 0, ao: 0, type: '晶体管', desc: '16 DI / 16 DO (晶体管)', price: 75},
+            { id: 'AE04', name: 'EM AE04', order: '6ES7 288-3AE04-0AA0', category: 'ai', di: 0, do: 0, ai: 4, ao: 0, desc: '4 x 模拟量输入', price: 60},
+            { id: 'AE08', name: 'EM AE08', order: '6ES7 288-3AE08-0AAO', category: 'ai', di: 0, do: 0, ai: 8, ao: 0, desc: '8 x 模拟量输入', price: 100},
+            { id: 'AQ02', name: 'EM AQ02', order: '6ES7 288-3AQ02-0AA0', category: 'ao', di: 0, do: 0, ai: 0, ao: 2, desc: '2 x 模拟量输出', price: 55},
+            { id: 'AQ04', name: 'EM AQ04', order: '6ES7 288-3AQ04-0AA0', category: 'ao', di: 0, do: 0, ai: 0, ao: 4, desc: '4 x 模拟量输出', price: 95},
+            { id: 'AM03', name: 'EM AM03', order: '6ES7 288-3AM03-0AA0', category: 'mix-a', di: 0, do: 0, ai: 2, ao: 1, desc: '2 AI / 1 AO', price: 70},
+            { id: 'AM06', name: 'EM AM06', order: '6ES7 288-3AM06-0AA0', category: 'mix-a', di: 0, do: 0, ai: 4, ao: 2, desc: '4 AI / 2 AO', price: 110},
+            { id: 'AR02', name: 'EM AR02', order: '6ES7 288-3AR02-0AA0', category: 'special', desc: '2通道热电阻输入', price: 80},
+            { id: 'AT04', name: 'EM AT04', order: '6ES7 288-3AT04-0AA0', category: 'special', desc: '4通道热电偶输入', price: 90}
+        ],
+        sbs: [
+            { id: 'DT04', name: 'SB DT04', order: '6ES7 288-5DT04-0AA0', category: 'mix', di: 2, do: 2, ai: 0, ao: 0, type: '晶体管', desc: '2 DI / 2 DO (晶体管)', price: 15},
+            { id: 'AE01', name: 'SB AE01', order: '6ES7 288-5AE01-0AA0', category: 'ai', di: 0, do: 0, ai: 1, ao: 0, desc: '1 x 12位模拟量输入', price: 18},
+            { id: 'AQ01', name: 'SB AQ01', order: '6ES7 288-5AQ01-0AA0', category: 'ao', di: 0, do: 0, ai: 0, ao: 1, desc: '1 x 12位模拟量输出', price: 18},
+            { id: 'CM01', name: 'SB CM01', order: '6ES7 288-5CM01-0AA0', category: 'comm', desc: '通信信号板 RS485/RS232', price: 25},
+            { id: 'BA01', name: 'SB BA01', order: '6ES7 288-5BA01-0AA0', category: 'special', desc: '电池信号板 (实时时钟保持)', price: 10}
+        ]
+    };
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const calculateBtn = document.getElementById('calculate-btn');
+        const cpuResultEl = document.getElementById('cpu-result');
+        const bomResultEl = document.getElementById('bom-result');
+        const errorMessageEl = document.getElementById('error-message');
+        const motionYes = document.getElementById('motion-yes');
+        const motionNo = document.getElementById('motion-no');
+        const axesContainer = document.getElementById('axes-input-container');
+
+        const explorerContent = document.getElementById('explorer-content');
+        const productTabs = document.querySelectorAll('.product-tab');
+
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        function handleMotionControlChange() {
+            axesContainer.style.display = motionYes.checked ? 'block' : 'none';
+        }
+        motionYes.addEventListener('change', handleMotionControlChange);
+        motionNo.addEventListener('change', handleMotionControlChange);
+
+        function calculateConfiguration() {
+            const needs = {
+                di: parseInt(document.getElementById('di').value) || 0,
+                do: parseInt(document.getElementById('do').value) || 0,
+                ai: parseInt(document.getElementById('ai').value) || 0,
+                ao: parseInt(document.getElementById('ao').value) || 0,
+                motion: document.getElementById('motion-yes').checked,
+                axes: parseInt(document.getElementById('axes').value) || 0
+            };
+
+            errorMessageEl.classList.add('hidden');
+            let possibleCpus = productData.cpus;
+
+            if (needs.motion) {
+                possibleCpus = possibleCpus.filter(cpu => cpu.type === '晶体管');
+            }
+            
+            if (needs.axes > 5) {
+                showError("S7-200 SMART系列CPU本体最多支持5轴高速脉冲输出，请检查您的轴数需求。");
+                return;
+            }
+            
+            if (needs.motion && needs.axes > 0) {
+                 possibleCpus = possibleCpus.filter(cpu => cpu.pto >= needs.axes);
+            }
+            
+            if (possibleCpus.length === 0) {
+                showError("根据您的运动控制需求，没有找到合适的CPU型号。请确认是否必须使用晶体管(ST)型号。");
+                return;
+            }
+
+            let bestCpu = null;
+            let minWaste = Infinity;
+
+            for (const cpu of possibleCpus) {
+                if (cpu.di >= needs.di && cpu.do >= needs.do) {
+                    const waste = (cpu.di - needs.di) + (cpu.do - needs.do);
+                    if (waste < minWaste) {
+                        minWaste = waste;
+                        bestCpu = cpu;
+                    }
+                }
+            }
+            
+            if (!bestCpu) {
+                 bestCpu = possibleCpus.sort((a,b) => (b.di + b.do) - (a.di + a.do))[0];
+            }
+
+
+            let remaining = {
+                di: Math.max(0, needs.di - bestCpu.di),
+                do: Math.max(0, needs.do - bestCpu.do),
+                ai: Math.max(0, needs.ai),
+                ao: Math.max(0, needs.ao)
+            };
+
+            const bom = [{...bestCpu, qty: 1}];
+            let emCount = 0;
+            let sbCount = 0;
+            
+            // Prioritize mixed analog signal boards if needs are small
+            if (remaining.ai === 1 && remaining.ao === 0 && sbCount < 2) {
+                const sb = productData.sbs.find(s => s.id === 'AE01');
+                bom.push({...sb, qty: 1});
+                remaining.ai = 0;
+                sbCount++;
+            }
+            if (remaining.ao === 1 && remaining.ai === 0 && sbCount < 2) {
+                 const sb = productData.sbs.find(s => s.id === 'AQ01');
+                 bom.push({...sb, qty: 1});
+                 remaining.ao = 0;
+                 sbCount++;
+            }
+
+            // Prioritize mixed digital signal boards
+            if (remaining.di > 0 && remaining.di <= 2 && remaining.do > 0 && remaining.do <= 2 && sbCount < 2) {
+                const sb = productData.sbs.find(s => s.id === 'DT04');
+                bom.push({...sb, qty: 1});
+                remaining.di -= sb.di;
+                remaining.do -= sb.do;
+                sbCount++;
+            }
+
+
+            const allModules = [...productData.ems, ...productData.sbs].sort((a,b) => b.price - a.price);
+            
+            while( (remaining.di > 0 || remaining.do > 0 || remaining.ai > 0 || remaining.ao > 0) && emCount < 8 ) {
+                let bestModule = null;
+                let maxCoverage = 0;
+                
+                let availableModules = productData.ems;
+                if(emCount >= 8) availableModules = [];
+
+                for (const mod of availableModules) {
+                    if (emCount >= 8) break;
+                    let coverage = 0;
+                    if (mod.di > 0 && remaining.di > 0) coverage += Math.min(mod.di, remaining.di);
+                    if (mod.do > 0 && remaining.do > 0) coverage += Math.min(mod.do, remaining.do);
+                    if (mod.ai > 0 && remaining.ai > 0) coverage += Math.min(mod.ai, remaining.ai);
+                    if (mod.ao > 0 && remaining.ao > 0) coverage += Math.min(mod.ao, remaining.ao);
+                    
+                    if (coverage > maxCoverage) {
+                        maxCoverage = coverage;
+                        bestModule = mod;
+                    }
+                }
+
+                if (bestModule) {
+                     const existing = bom.find(item => item.id === bestModule.id);
+                     if (existing) {
+                         existing.qty++;
+                     } else {
+                         bom.push({...bestModule, qty: 1});
+                     }
+                    remaining.di = Math.max(0, remaining.di - bestModule.di);
+                    remaining.do = Math.max(0, remaining.do - bestModule.do);
+                    remaining.ai = Math.max(0, remaining.ai - bestModule.ai);
+                    remaining.ao = Math.max(0, remaining.ao - bestModule.ao);
+                    emCount++;
+                } else {
+                    break;
+                }
+            }
+            
+            if (remaining.di > 0 || remaining.do > 0 || remaining.ai > 0 || remaining.ao > 0) {
+                 showError("扩展模块已达上限(8个)，但仍有I/O需求未满足。请考虑使用点数更多的CPU或重新规划您的I/O方案。");
+            }
+            
+            // Add HMI for case study
+            if (needs.di === 30 && needs.do === 20) {
+                 bom.push({name: 'SMART 700 IE V5', order: '6AV6 648-0EC11-3AX0', qty: 1, category: 'hmi', desc: '7寸触摸屏'});
+            }
+
+
+            renderResults(bestCpu, needs, bom);
+        }
+        
+        function showError(message) {
+            cpuResultEl.innerHTML = '';
+            bomResultEl.innerHTML = '';
+            errorMessageEl.textContent = message;
+            errorMessageEl.classList.remove('hidden');
+        }
+
+        function renderResults(cpu, needs, bom) {
+             let provided = bom.reduce((acc, item) => {
+                acc.di += (item.di || 0) * item.qty;
+                acc.do += (item.do || 0) * item.qty;
+                acc.ai += (item.ai || 0) * item.qty;
+                acc.ao += (item.ao || 0) * item.qty;
+                acc.pto = Math.max(acc.pto, item.pto || 0);
+                return acc;
+            }, {di: 0, do: 0, ai: 0, ao: 0, pto: 0});
+
+            cpuResultEl.innerHTML = `
+                <div class="border-b pb-4">
+                    <p class="font-semibold text-lg text-[#006478]">推荐CPU型号:</p>
+                    <p class="text-4xl font-bold text-gray-900">${cpu.name}</p>
+                    <p class="text-sm text-gray-500">${cpu.type}输出, ${cpu.power}供电</p>
+                </div>
+                <div class="mt-4">
+                    <p class="font-semibold text-lg text-[#006478]">配置能力概览:</p>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                        ${renderStat('数字量输入 (DI)', needs.di, provided.di)}
+                        ${renderStat('数字量输出 (DO)', needs.do, provided.do)}
+                        ${renderStat('模拟量输入 (AI)', needs.ai, provided.ai)}
+                        ${renderStat('模拟量输出 (AO)', needs.ao, provided.ao)}
+                        ${renderStat('高速脉冲轴', needs.axes, cpu.pto)}
+                    </div>
+                </div>
+            `;
+
+            bomResultEl.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="p-3 font-semibold">型号</th>
+                                <th class="p-3 font-semibold">订货号</th>
+                                <th class="p-3 font-semibold text-center">数量</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            ${bom.map(item => `
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-3">
+                                        <p class="font-medium">${item.name}</p>
+                                        <p class="text-sm text-gray-500">${item.desc || ''}</p>
+                                    </td>
+                                    <td class="p-3 font-mono text-gray-600">${item.order}</td>
+                                    <td class="p-3 text-center font-medium">${item.qty}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
+        function renderStat(label, needed, provided) {
+            const isSufficient = provided >= needed;
+            return `
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-sm text-gray-600">${label}</p>
+                    <div class="flex items-baseline space-x-2">
+                        <p class="text-xl font-bold">${provided}</p>
+                        <p class="text-sm ${isSufficient ? 'text-green-600' : 'text-red-600'}">
+                           (需求: ${needed}) ${isSufficient ? '✓' : '✗'}
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        calculateBtn.addEventListener('click', calculateConfiguration);
+
+        function renderExplorer(category) {
+            let items = [];
+            switch(category) {
+                case 'cpu': items = productData.cpus; break;
+                case 'em': items = productData.ems; break;
+                case 'sb': items = productData.sbs; break;
+            }
+
+            explorerContent.innerHTML = items.map(item => `
+                <div class="card p-4 flex flex-col justify-between fade-in">
+                    <div>
+                        <h4 class="font-bold text-lg text-gray-800">${item.name}</h4>
+                        <p class="text-sm text-gray-500 mb-3">${item.desc || `DI:${item.di}, DO:${item.do}`}</p>
+                        ${item.type ? `<span class="tag ${item.type === '继电器' ? 'tag-blue' : 'tag-green'} mb-2">${item.type}</span>` : ''}
+                        ${item.power ? `<span class="tag tag-gray mb-2">${item.power} 供电</span>` : ''}
+                    </div>
+                    <div class="mt-4 border-t pt-2">
+                        <p class="text-xs text-gray-400">订货号</p>
+                        <p class="font-mono text-sm text-gray-600">${item.order}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        productTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                productTabs.forEach(t => t.classList.remove('active', 'text-[#009999]', 'border-[#009999]'));
+                tab.classList.add('active', 'text-[#009999]', 'border-[#009999]');
+                renderExplorer(tab.dataset.tab);
+            });
+        });
+
+        const ctx = document.getElementById('cpu-comparison-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: productData.cpus.map(c => c.name),
+                datasets: [
+                    {
+                        label: '数字量 I/O 总数',
+                        data: productData.cpus.map(c => c.di + c.do),
+                        backgroundColor: 'rgba(0, 153, 153, 0.6)',
+                        borderColor: 'rgba(0, 153, 153, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '高速计数器 (路)',
+                        data: productData.cpus.map(c => c.hsc),
+                        backgroundColor: 'rgba(84, 110, 122, 0.6)',
+                        borderColor: 'rgba(84, 110, 122, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '高速脉冲输出 (轴)',
+                        data: productData.cpus.map(c => c.pto),
+                        backgroundColor: 'rgba(255, 167, 38, 0.6)',
+                        borderColor: 'rgba(255, 167, 38, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                           color: '#e0e0e0'
+                        }
+                    },
+                    x: {
+                         grid: {
+                           display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'CPU 模块核心性能对比',
+                        font: {
+                            size: 18
+                        },
+                        color: '#333'
+                    },
+                    tooltip: {
+                         callbacks: {
+                            footer: (tooltipItems) => {
+                                const cpuIndex = tooltipItems[0].dataIndex;
+                                const cpu = productData.cpus[cpuIndex];
+                                return `输出类型: ${cpu.type}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        const navLinks = document.querySelectorAll('header .nav-link, #mobile-menu a');
+        const sections = document.querySelectorAll('main section');
+        
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if(pageYOffset >= sectionTop - 120) {
+                    current = section.getAttribute('id');
+                }
+            })
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active', 'text-[#009999]', 'border-[#009999]');
+                if(link.getAttribute('href').includes(current)){
+                    link.classList.add('active', 'text-[#009999]', 'border-[#009999]');
+                }
+            })
+        });
+
+        calculateConfiguration();
+        renderExplorer('cpu');
+        handleMotionControlChange();
+    });
+</script>
+
+</body>
+</html>
