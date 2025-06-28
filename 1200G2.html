@@ -92,15 +92,15 @@
                     <div>
                         <h3 class="font-semibold text-lg mb-2 text-slate-700">数字量 I/O</h3>
                         <div class="space-y-3">
-                            <div><label class="block text-sm font-medium text-slate-600">数字量输入 (DI):</label><input type="number" id="di" min="0" value="10" class="form-input"></div>
-                            <div><label class="block text-sm font-medium text-slate-600">数字量输出 (DO):</label><input type="number" id="do_t" min="0" value="8" class="form-input"></div>
+                            <div><label class="block text-sm font-medium text-slate-600">数字量输入 (DI):</label><input type="number" id="di" min="0" value="30" class="form-input"></div>
+                            <div><label class="block text-sm font-medium text-slate-600">数字量输出 (DO):</label><input type="number" id="do_t" min="0" value="26" class="form-input"></div>
                         </div>
                     </div>
                     <div>
                         <h3 class="font-semibold text-lg mb-2 text-slate-700">模拟量 I/O</h3>
                         <div class="space-y-3">
-                            <div><label class="block text-sm font-medium text-slate-600">模拟量输入 (AI):</label><input type="number" id="ai" min="0" value="2" class="form-input"></div>
-                            <div><label class="block text-sm font-medium text-slate-600">模拟量输出 (AO):</label><input type="number" id="ao" min="0" value="2" class="form-input"></div>
+                            <div><label class="block text-sm font-medium text-slate-600">模拟量输入 (AI):</label><input type="number" id="ai" min="0" value="0" class="form-input"></div>
+                            <div><label class="block text-sm font-medium text-slate-600">模拟量输出 (AO):</label><input type="number" id="ao" min="0" value="0" class="form-input"></div>
                         </div>
                     </div>
                      <div>
@@ -260,7 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // 从表单获取所有用户输入
 function getInputs() {
     const reserve = 1 + (parseInt(document.getElementById('expansion_reserve').value) / 100);
-    // *** 逻辑修正：预留仅应用于数字量I/O ***
     return {
         di: Math.ceil((parseInt(document.getElementById('di').value) || 0) * reserve),
         do_t: Math.ceil((parseInt(document.getElementById('do_t').value) || 0) * reserve),
@@ -274,140 +273,130 @@ function getInputs() {
     };
 }
 
-// 主函数，根据输入计算和更新配置
+// 核心选型逻辑
 function updateConfiguration() {
     const needs = getInputs();
-    
-    const potentialCpus = S7_1200_G2_DATA.cpus.filter(cpu => 
-        cpu.hsc >= needs.hsc && 
-        cpu.f_cpu === needs.fail_safe
-    );
+    const potentialCpus = S7_1200_G2_DATA.cpus.filter(cpu => cpu.hsc >= needs.hsc && cpu.f_cpu === needs.fail_safe);
 
     if (potentialCpus.length === 0) {
         renderResults(null, [], [], [], `找不到满足功能需求的CPU (HSC/Fail-Safe)。`);
         return;
     }
 
-    let bestConfig = null;
+    let bestOverallConfig = null;
 
-    // 遍历所有可能的CPU，寻找成本最低的有效配置
+    // 遍历所有可能的CPU，为每个CPU找到最优的模块组合
     for (const cpu of potentialCpus) {
-        let currentSbs = [];
-        let currentSms = [];
-        let remaining = { ...needs };
+        let remainingNeeds = { ...needs };
+        remainingNeeds.di -= cpu.di;
+        remainingNeeds.do_t -= cpu.do_t;
+
+        const scenarios = [];
         
-        // --- 核心逻辑修正：先减去CPU自带的I/O点数 ---
-        remaining.di -= cpu.di;
-        remaining.do_t -= cpu.do_t;
+        // 场景 1: 只使用SM模块
+        scenarios.push(calculateModuleCost([], remainingNeeds, cpu.sm));
 
-        let sbSlotsUsed = 0;
-
-        // 优先使用信号板 (SB) 满足需求
-        if (needs.comm_rs485 && sbSlotsUsed < cpu.sb) {
-            const sb = S7_1200_G2_DATA.sbs.find(s => s.type === 'comm_rs485');
-            if(sb) { currentSbs.push(sb); sbSlotsUsed++; remaining.comm_rs485 = false; }
-        }
-        
-        if (remaining.ai > 0 && remaining.ao > 0 && sbSlotsUsed < cpu.sb) {
-            const sb = S7_1200_G2_DATA.sbs.find(s => s.type === 'aiao');
-            if(sb) { currentSbs.push(sb); remaining.ai -= sb.ai; remaining.ao -= sb.ao; sbSlotsUsed++; }
-        }
-        if (remaining.ai > 0 && sbSlotsUsed < cpu.sb) {
-            const sb = S7_1200_G2_DATA.sbs.find(s => s.type === 'ai');
-            if(sb) { currentSbs.push(sb); remaining.ai -= sb.points; sbSlotsUsed++; }
-        }
-        if (remaining.ao > 0 && sbSlotsUsed < cpu.sb) {
-            const sb = S7_1200_G2_DATA.sbs.find(s => s.type === 'ao');
-            if(sb) { currentSbs.push(sb); remaining.ao -= sb.points; sbSlotsUsed++; }
-        }
-        if (remaining.rtd > 0 && sbSlotsUsed < cpu.sb) {
-            const sb = S7_1200_G2_DATA.sbs.find(s => s.type === 'rtd_sb');
-             if(sb) { currentSbs.push(sb); remaining.rtd -= sb.points; sbSlotsUsed++; }
-        }
-        if (remaining.tc > 0 && sbSlotsUsed < cpu.sb) {
-            const sb = S7_1200_G2_DATA.sbs.find(s => s.type === 'tc_sb');
-            if(sb) { currentSbs.push(sb); remaining.tc -= sb.points; sbSlotsUsed++; }
-        }
-        if (remaining.di > 0 && remaining.do_t > 0 && sbSlotsUsed < cpu.sb) {
-             const sb = S7_1200_G2_DATA.sbs.find(s => s.type === 'dido_t');
-            if(sb) { currentSbs.push(sb); remaining.di -= sb.di; remaining.do_t -= sb.do_t; sbSlotsUsed++; }
-        }
-        if (remaining.di > 0 && sbSlotsUsed < cpu.sb) {
-            const sb = S7_1200_G2_DATA.sbs.find(s => s.type === 'di');
-            if(sb) { currentSbs.push(sb); remaining.di -= sb.points; sbSlotsUsed++; }
-        }
-        if (remaining.do_t > 0 && sbSlotsUsed < cpu.sb) {
-            const sb = S7_1200_G2_DATA.sbs.find(s => s.type === 'do_t');
-            if(sb) { currentSbs.push(sb); remaining.do_t -= sb.points; sbSlotsUsed++; }
-        }
-
-        // 使用信号模块 (SM) 满足剩余需求
-        const addModule = (type, prop) => {
-            const modules = S7_1200_G2_DATA.sms.filter(m => m.type === type);
-            if (modules.length === 0) return;
-            const module = modules.sort((a,b) => (b.points || 0) - (a.points || 0))[0]; 
-            while (remaining[prop] > 0) {
-                currentSms.push(module);
-                remaining[prop] -= module.points || (module.ai || 0) + (module.ao || 0);
+        // 场景 2: 使用1个SB
+        if (cpu.sb >= 1) {
+            for (const sb of S7_1200_G2_DATA.sbs) {
+                let needsAfterSb1 = { ...remainingNeeds };
+                needsAfterSb1.di -= sb.di || 0;
+                needsAfterSb1.do_t -= sb.do_t || 0;
+                needsAfterSb1.ai -= sb.ai || 0;
+                needsAfterSb1.ao -= sb.ao || 0;
+                needsAfterSb1.tc -= sb.type === 'tc_sb' ? sb.points : 0;
+                needsAfterSb1.rtd -= sb.type === 'rtd_sb' ? sb.points : 0;
+                needsAfterSb1.comm_rs485 = sb.type === 'comm_rs485' ? false : needsAfterSb1.comm_rs485;
+                
+                scenarios.push(calculateModuleCost([sb], needsAfterSb1, cpu.sm));
             }
-        };
-
-        if (remaining.comm_rs485) {
-             const module = S7_1200_G2_DATA.sms.find(m => m.type === 'comm_rs485');
-             if(module) currentSms.push(module);
-        }
-
-        addModule('di', 'di');
-        addModule('do_t', 'do_t');
-        addModule('ai', 'ai');
-        addModule('ao', 'ao');
-        addModule('rtd', 'rtd');
-        addModule('tc', 'tc');
-
-        // 校验配置
-        const sm_count = currentSms.length;
-        if (sm_count > cpu.sm) {
-            continue; // 槽位不足，尝试下一个CPU
-        }
-
-        const totalPower = [...currentSbs, ...currentSms].reduce((sum, m) => sum + m.power, 0);
-        if (totalPower > cpu.power) {
-            continue; // 功率不足，尝试下一个CPU
         }
         
-        const currentCost = cpu.price + [...currentSbs, ...currentSms].reduce((sum, m) => sum + m.price, 0);
-        if (!bestConfig || currentCost < bestConfig.cost) {
-            bestConfig = { cpu, sbs: currentSbs, modules: currentSms, cost: currentCost };
+        // 场景 3: 使用2个SB (仅当CPU支持)
+        if (cpu.sb >= 2) {
+             for (let i = 0; i < S7_1200_G2_DATA.sbs.length; i++) {
+                for (let j = i; j < S7_1200_G2_DATA.sbs.length; j++) { // Use j=i to avoid duplicate pairs
+                    const sb1 = S7_1200_G2_DATA.sbs[i];
+                    const sb2 = S7_1200_G2_DATA.sbs[j];
+                    let needsAfterSb2 = { ...remainingNeeds };
+
+                    [sb1, sb2].forEach(sb => {
+                        needsAfterSb2.di -= sb.di || 0;
+                        needsAfterSb2.do_t -= sb.do_t || 0;
+                        needsAfterSb2.ai -= sb.ai || 0;
+                        needsAfterSb2.ao -= sb.ao || 0;
+                        needsAfterSb2.tc -= sb.type === 'tc_sb' ? sb.points : 0;
+                        needsAfterSb2.rtd -= sb.type === 'rtd_sb' ? sb.points : 0;
+                        needsAfterSb2.comm_rs485 = sb.type === 'comm_rs485' ? false : needsAfterSb2.comm_rs485;
+                    });
+                     scenarios.push(calculateModuleCost([sb1, sb2], needsAfterSb2, cpu.sm));
+                }
+            }
+        }
+
+        // 过滤无效场景并找到当前CPU下的最优配置
+        const validScenarios = scenarios.filter(s => s.isValid);
+        if (validScenarios.length > 0) {
+            const bestScenarioForCpu = validScenarios.reduce((best, current) => (current.cost < best.cost ? current : best));
+            const totalCost = cpu.price + bestScenarioForCpu.cost;
+
+            if (!bestOverallConfig || totalCost < bestOverallConfig.cost) {
+                bestOverallConfig = {
+                    cpu: cpu,
+                    sbs: bestScenarioForCpu.sbs,
+                    modules: bestScenarioForCpu.sms,
+                    cost: totalCost,
+                };
+            }
         }
     }
-    
-    // 渲染最终结果
-    if (bestConfig) {
-        let bom = [{ ...bestConfig.cpu, count: 1, type: 'CPU' }];
-        
-        const sbCounts = bestConfig.sbs.reduce((acc, m) => {
-            const key = m.order;
-            if (!acc[key]) acc[key] = { ...m, count: 0, type: '信号板' };
-            acc[key].count++;
-            return acc;
-        }, {});
-        bom = bom.concat(Object.values(sbCounts));
 
-        const moduleCounts = bestConfig.modules.reduce((acc, m) => {
-            const key = m.order;
-            if (!acc[key]) acc[key] = { ...m, count: 0, type: m.is_cm ? '通信模块' : '信号模块' };
-            acc[key].count++;
-            return acc;
-        }, {});
-        bom = bom.concat(Object.values(moduleCounts));
-        
+    if (bestOverallConfig) {
+        let bom = [{ ...bestOverallConfig.cpu, count: 1, type: 'CPU' }];
+        const sbCounts = bestOverallConfig.sbs.reduce((acc, m) => { acc[m.order] = (acc[m.order] || { ...m, count: 0 }); acc[m.order].count++; return acc; }, {});
+        const smCounts = bestOverallConfig.modules.reduce((acc, m) => { acc[m.order] = (acc[m.order] || { ...m, count: 0 }); acc[m.order].count++; return acc; }, {});
+        bom = bom.concat(Object.values(sbCounts).map(m => ({ ...m, type: '信号板' })));
+        bom = bom.concat(Object.values(smCounts).map(m => ({ ...m, type: m.is_cm ? '通信模块' : '信号模块' })));
         bom.push({ ...S7_1200_G2_DATA.accessories.find(a => a.id === 'PM'), count: 1, type: '附件' });
         bom.push({ ...S7_1200_G2_DATA.accessories.find(a => a.id === 'SMC'), count: 1, type: '附件' });
-
-        renderResults(bestConfig.cpu, bestConfig.sbs, bestConfig.modules, bom, null);
+        renderResults(bestOverallConfig.cpu, bestOverallConfig.sbs, bestOverallConfig.modules, bom, null);
     } else {
         renderResults(null, [], [], [], `无法为您的需求找到一个有效的 S7-1200 G2 配置。请尝试调整需求或考虑更高阶的PLC系列。`);
     }
+}
+
+function calculateModuleCost(initialSbs, needs, maxSmSlots) {
+    let currentSms = [];
+    let remaining = { ...needs };
+    
+    const addModule = (type, prop) => {
+        const modules = S7_1200_G2_DATA.sms.filter(m => m.type === type).sort((a,b) => a.price/a.points - b.price/b.points);
+        if (modules.length === 0) return;
+        
+        while (remaining[prop] > 0) {
+            const bestModule = modules[0]; // Pick most cost-effective per point
+            if (!bestModule) break;
+            currentSms.push(bestModule);
+            remaining[prop] -= bestModule.points || (bestModule.ai || 0) + (bestModule.ao || 0);
+        }
+    };
+    
+    if (remaining.comm_rs485) {
+        const cm = S7_1200_G2_DATA.sms.find(m => m.type === 'comm_rs485');
+        if(cm) currentSms.push(cm);
+    }
+    
+    addModule('di', 'di');
+    addModule('do_t', 'do_t');
+    addModule('ai', 'ai');
+    addModule('ao', 'ao');
+    addModule('rtd', 'rtd');
+    addModule('tc', 'tc');
+
+    const isValid = currentSms.length <= maxSmSlots;
+    const cost = (initialSbs.reduce((sum, sb) => sum + sb.price, 0)) + (currentSms.reduce((sum, sm) => sum + sm.price, 0));
+
+    return { sbs: initialSbs, sms: currentSms, cost: cost, isValid: isValid };
 }
 
 // 将计算出的配置渲染到UI
@@ -420,7 +409,6 @@ function renderResults(cpu, sbs, modules, bom, error) {
     const bomTableEl = document.getElementById('bom-table');
     const bomFooterEl = document.getElementById('bom-footer');
 
-    // 清空历史结果
     validationSummaryEl.innerHTML = '';
     bomTableEl.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">等待配置生成...</td></tr>';
     bomFooterEl.innerHTML = '';
@@ -428,51 +416,26 @@ function renderResults(cpu, sbs, modules, bom, error) {
     if (error) {
         validationSummaryEl.className = 'error-message p-4 rounded-lg';
         validationSummaryEl.innerHTML = `<strong>配置错误:</strong> ${error}`;
-    }
-
-    if (!cpu) {
-        cpuResultEl.innerHTML = '-';
-        sbResultEl.innerHTML = '-';
-        modulesResultEl.innerHTML = '-';
+        [cpuResultEl, sbResultEl, modulesResultEl].forEach(el => el.innerHTML = '-');
         slotsResultEl.innerHTML = '<p class="text-sm text-slate-500">等待输入...</p>';
-        powerChart.data.datasets[0].data[0] = 0;
-        powerChart.data.datasets[1].data[0] = 0;
-        powerChart.options.scales.x.max = 100;
+        powerChart.data.datasets[0].data[0] = 0; powerChart.data.datasets[1].data[0] = 0;
         powerChart.update();
         return;
     }
-    
-    if (!error) {
-        validationSummaryEl.className = 'success-message p-4 rounded-lg';
-        validationSummaryEl.innerHTML = '<strong>配置校验通过!</strong> 这是一个基于您需求的有效且经济的硬件组合。';
-    }
 
-    // 推荐硬件
+    if (!cpu) return;
+    
+    validationSummaryEl.className = 'success-message p-4 rounded-lg';
+    validationSummaryEl.innerHTML = '<strong>配置校验通过!</strong> 已为您找到最经济的硬件组合。';
+
     cpuResultEl.innerHTML = `<span class="font-bold result-highlight">${cpu.name}</span> <br> <span class="text-sm text-slate-500">${cpu.order}</span>`;
     
-    const sbCounts = sbs.reduce((acc, m) => {
-        acc[m.order] = (acc[m.order] || { ...m, count: 0 });
-        acc[m.order].count++;
-        return acc;
-    }, {});
-    if (Object.keys(sbCounts).length > 0) {
-        sbResultEl.innerHTML = Object.values(sbCounts).map(m => `<div class="text-sm">${m.count}x ${m.name} (${m.order})</div>`).join('');
-    } else {
-        sbResultEl.innerHTML = '<span class="text-sm text-slate-500">未使用信号板。</span>';
-    }
+    const sbCounts = sbs.reduce((acc, m) => { acc[m.order] = (acc[m.order] || { ...m, count: 0 }); acc[m.order].count++; return acc; }, {});
+    sbResultEl.innerHTML = Object.keys(sbCounts).length > 0 ? Object.values(sbCounts).map(m => `<div class="text-sm">${m.count}x ${m.name} (${m.order})</div>`).join('') : '<span class="text-sm text-slate-500">未使用信号板。</span>';
 
-    const moduleCounts = modules.reduce((acc, m) => {
-        acc[m.order] = (acc[m.order] || { ...m, count: 0 });
-        acc[m.order].count++;
-        return acc;
-    }, {});
-    if (Object.keys(moduleCounts).length > 0) {
-        modulesResultEl.innerHTML = Object.values(moduleCounts).map(m => `<div class="text-sm">${m.count}x ${m.name} (${m.order})</div>`).join('');
-    } else {
-        modulesResultEl.innerHTML = '<span class="text-sm text-slate-500">无需额外扩展模块。</span>';
-    }
+    const moduleCounts = modules.reduce((acc, m) => { acc[m.order] = (acc[m.order] || { ...m, count: 0 }); acc[m.order].count++; return acc; }, {});
+    modulesResultEl.innerHTML = Object.keys(moduleCounts).length > 0 ? Object.values(moduleCounts).map(m => `<div class="text-sm">${m.count}x ${m.name} (${m.order})</div>`).join('') : '<span class="text-sm text-slate-500">无需额外扩展模块。</span>';
     
-    // 槽位占用可视化
     let sbSlotsHtml = `<div><h5 class="text-xs font-bold mb-1">信号板 (SB):</h5><div class="flex items-center space-x-1 flex-wrap">`;
     for(let i=0; i < sbs.length; i++) sbSlotsHtml += `<div class="p-1 bg-purple-200 text-purple-800 rounded text-xs font-mono">SB</div>`;
     for(let i=0; i < cpu.sb - sbs.length; i++) sbSlotsHtml += `<div class="p-1 bg-slate-200 text-slate-500 rounded text-xs font-mono">空闲</div>`;
@@ -484,14 +447,12 @@ function renderResults(cpu, sbs, modules, bom, error) {
     smSlotsHtml += `</div></div>`;
     slotsResultEl.innerHTML = sbSlotsHtml + smSlotsHtml;
 
-    // 功率图表更新
     const totalPower = [...sbs, ...modules].reduce((sum, m) => sum + m.power, 0);
     powerChart.data.datasets[0].data[0] = cpu.power;
     powerChart.data.datasets[1].data[0] = totalPower;
     powerChart.options.scales.x.max = Math.max(cpu.power, totalPower, 100) * 1.2;
     powerChart.update();
     
-    // 物料清单 (BOM) 表格
     let bomHtml = '';
     let totalCost = 0;
     bom.forEach(item => {
@@ -508,12 +469,7 @@ function renderResults(cpu, sbs, modules, bom, error) {
     });
     bomTableEl.innerHTML = bomHtml;
 
-    // BOM 表尾总价
-    bomFooterEl.innerHTML = `
-        <tr>
-            <td colspan="5" class="px-6 py-4 text-right text-base font-bold text-slate-700 uppercase">总计成本</td>
-            <td class="px-6 py-4 text-right text-base font-mono text-slate-900">${totalCost.toFixed(2)}</td>
-        </tr>`;
+    bomFooterEl.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-right text-base font-bold text-slate-700 uppercase">总计成本</td><td class="px-6 py-4 text-right text-base font-mono text-slate-900">${totalCost.toFixed(2)}</td></tr>`;
 }
 </script>
 
