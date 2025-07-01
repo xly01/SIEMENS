@@ -13,12 +13,16 @@
         body {
             font-family: 'Noto Sans SC', sans-serif;
             background-color: #F0F4F8;
+        }
+        #page-wrapper {
             transition: margin-right 0.4s ease-in-out;
         }
         .gradient-text {
-            background: linear-gradient(to right, #00A8E8, #007EA7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #009999; /* Siemens official logo color */
+        }
+        .highlight-text {
+            color: #009999;
+            font-weight: bold;
         }
         .tab-button {
             transition: all 0.3s ease;
@@ -128,11 +132,8 @@
         #compare-sidebar.visible {
             right: 0;
         }
-        body.compare-sidebar-visible main {
+        body.compare-sidebar-visible #page-wrapper {
             margin-right: 350px;
-        }
-        main {
-            transition: margin-right 0.4s ease-in-out;
         }
         .modal-overlay {
             position: fixed;
@@ -175,315 +176,387 @@
             transform: scale(1.02);
         }
         .doc-link {
-            @apply text-blue-600 hover:underline mr-4;
+            @apply text-blue-600 hover:underline;
+        }
+        /* NEW Styles for Highlight Wizard */
+        .highlight-wizard-btn {
+            @apply w-full p-2 text-sm text-center bg-gray-100 rounded-md border border-gray-200 cursor-pointer transition-all hover:bg-blue-100 hover:border-blue-300;
+        }
+        .highlight-wizard-btn.active {
+            @apply bg-blue-600 text-white border-blue-700 font-bold;
+        }
+        .highlight-result {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        .highlight-result.show {
+            display: block;
         }
     </style>
 </head>
 <body class="text-[#003459]">
-
-    <header class="bg-white shadow-md sticky top-0 z-50">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <h1 class="text-2xl md:text-3xl font-bold gradient-text">SIMATIC HMI & IPC 参数化选型工具</h1>
-            <div class="text-sm font-semibold text-[#007EA7]">面向未来的可视化决策</div>
-        </div>
-    </header>
-
-    <main class="container mx-auto p-4 md:p-8">
-
-        <section id="intro" class="text-center mb-12">
-            <h2 class="text-4xl md:text-5xl font-extrabold mb-4">深入核心，精确实用</h2>
-            <p class="text-lg md:text-xl max-w-3xl mx-auto text-gray-600">本工具通过清晰的表格，直观对比各主流HMI、工控机与工业显示器的详细硬件规格、订货号、附件及软件信息，帮助您快速定位最适合项目的产品。</p>
-        </section>
-        
-        <section id="visual-overview" class="mb-12">
-             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                 <div class="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
-                      <h3 class="text-xl font-bold mb-4 text-center">主流HMI系列能力雷达图</h3>
-                      <div class="relative h-80 md:h-96">
-                          <canvas id="performanceRadarChart"></canvas>
-                      </div>
-                 </div>
-                 <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col justify-center">
-                      <h3 class="text-xl font-bold mb-4">生命周期状态图例</h3>
-                      <div class="space-y-4 mb-6">
-                          <div class="flex items-center"><span class="lifecycle-dot bg-green-500"></span> <div><span class="font-bold">未来主力</span><span class="text-xs text-gray-500 ml-2">Active / Future-proof</span></div></div>
-                          <div class="flex items-center"><span class="lifecycle-dot bg-blue-500"></span> <div><span class="font-bold">市场主流</span><span class="text-xs text-gray-500 ml-2">Active / Mainstream</span></div></div>
-                          <div class="flex items-center"><span class="lifecycle-dot bg-yellow-500"></span> <div><span class="font-bold">成熟经典</span><span class="text-xs text-gray-500 ml-2">Mature / Classic</span></div></div>
-                          <div class="flex items-center"><span class="lifecycle-dot bg-orange-500"></span> <div><span class="font-bold">维护/淘汰阶段</span><span class="text-xs text-gray-500 ml-2">Phase-out</span></div></div>
-                      </div>
-                      <button id="open-wizard-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                          开启智能选型向导
-                      </button>
-                 </div>
-             </div>
-        </section>
-
-        <section id="filters-section" class="mb-8 p-6 bg-white rounded-xl shadow-lg">
-            <h3 class="text-xl font-bold mb-4">技术特性筛选</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <select id="filter-touch" class="filter-control block w-full p-2 border border-gray-300 rounded-md">
-                    <option value="all">所有触摸技术</option>
-                    <option value="Capacitive">电容式多点触摸</option>
-                    <option value="Resistive">电阻式单点触摸</option>
-                </select>
-                <select id="filter-script" class="filter-control block w-full p-2 border border-gray-300 rounded-md">
-                    <option value="all">所有脚本支持</option>
-                    <option value="JavaScript">JavaScript</option>
-                    <option value="VBScript">VBScript</option>
-                    <option value="none">不支持</option>
-                </select>
-                <select id="filter-interface" class="filter-control block w-full p-2 border border-gray-300 rounded-md">
-                    <option value="all">所有串行/DP接口</option>
-                    <option value="serial">支持串行接口</option>
-                    <option value="dp">支持PROFIBUS DP</option>
-                </select>
-                <button id="reset-filters" class="col-span-2 md:col-span-1 bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600">重置筛选</button>
+    <div id="page-wrapper">
+        <header class="bg-white shadow-md sticky top-0 z-50">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 class="text-2xl md:text-3xl font-bold gradient-text">SIEMENS</h1>
+                <div class="text-sm font-semibold text-[#007EA7]">本工具所示价格为表格价，不包含折扣，下单请联系当地西门子办事处</div>
             </div>
-        </section>
+        </header>
 
-        <section id="series-tabs" class="mb-16">
-            <div class="bg-white rounded-xl shadow-lg">
-                <div class="border-b border-gray-200">
-                    <nav class="flex flex-wrap -mb-px px-4" aria-label="Tabs" id="tab-buttons">
-                        <button class="tab-button active text-gray-600" data-tab="unified-comfort">精智统一 (Unified Comfort)</button>
-                        <button class="tab-button text-gray-600" data-tab="unified-basic">精智统一基础 (Unified Basic)</button>
-                        <button class="tab-button text-gray-600" data-tab="comfort">精智系列 (Comfort)</button>
-                        <button class="tab-button text-gray-600" data-tab="basic">精简系列 (Basic)</button>
-                        <button class="tab-button text-gray-600" data-tab="smart-line">精彩系列 (Smart Line)</button>
-                        <button class="tab-button text-gray-600" data-tab="ipc">工控机 (Panel PC)</button>
-                        <button class="tab-button text-gray-600" data-tab="ifp">工业显示器 (IFP)</button>
-                        <button class="tab-button text-gray-600" data-tab="software">软件授权</button>
-                    </nav>
+        <main class="container mx-auto p-4 md:p-8">
+
+            <section id="intro" class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold mb-4 gradient-text">西门子HMI选型工具</h2>
+                <p class="text-lg md:text-xl max-w-3xl mx-auto text-gray-600">本工具非官方，结果仅供参考，谢礼阳 13372509117 SIEMENS HZ OEM 销售</p>
+            </section>
+            
+            <section id="visual-overview" class="mb-12">
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                     <!-- Column 1: Radar Chart -->
+                     <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col">
+                          <h3 class="text-xl font-bold mb-4 text-center">主流HMI系列能力雷达图</h3>
+                          <div class="relative flex-grow h-64 md:h-80">
+                              <canvas id="performanceRadarChart"></canvas>
+                          </div>
+                     </div>
+                     <!-- Column 2: NEW Interactive "Highlight Wizard" -->
+                     <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col">
+                          <h3 class="text-xl font-bold mb-4">亮点选型向导</h3>
+                          <p class="text-sm text-gray-500 mb-4">您最核心的诉求是？</p>
+                          <div class="grid grid-cols-2 gap-2 mb-4" id="highlight-wizard-buttons">
+                                <button class="highlight-wizard-btn" data-target="tech">数字化</button>
+                                <button class="highlight-wizard-btn" data-target="cost">极致性价比</button>
+                                <button class="highlight-wizard-btn" data-target="stable">成熟稳定与兼容</button>
+                                <button class="highlight-wizard-btn" data-target="pc">PC平台的开放性</button>
+                          </div>
+                          <div id="highlight-wizard-results" class="flex-grow space-y-3 text-sm border-t pt-3">
+                                <!-- Results will be injected here by JS -->
+                                <p id="highlight-prompt" class="text-center text-gray-400 pt-8">请点击上方您的核心需求</p>
+                          </div>
+                     </div>
+                     <!-- Column 3: Lifecycle & Main Wizard -->
+                     <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col justify-center">
+                          <h3 class="text-xl font-bold mb-4">生命周期状态图例</h3>
+                          <div class="space-y-4 mb-6">
+                              <div class="flex items-center"><span class="lifecycle-dot bg-green-500"></span> <div><span class="font-bold">未来主力</span><span class="text-xs text-gray-500 ml-2">Active / Future-proof</span></div></div>
+                              <div class="flex items-center"><span class="lifecycle-dot bg-blue-500"></span> <div><span class="font-bold">市场主流</span><span class="text-xs text-gray-500 ml-2">Active / Mainstream</span></div></div>
+                              <div class="flex items-center"><span class="lifecycle-dot bg-yellow-500"></span> <div><span class="font-bold">成熟经典</span><span class="text-xs text-gray-500 ml-2">Mature / Classic</span></div></div>
+                              <div class="flex items-center"><span class="lifecycle-dot bg-orange-500"></span> <div><span class="font-bold">维护/淘汰阶段</span><span class="text-xs text-gray-500 ml-2">Phase-out</span></div></div>
+                          </div>
+                          <button id="open-wizard-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                              开启完整选型向导
+                          </button>
+                     </div>
+                 </div>
+            </section>
+
+            <section id="filters-section" class="mb-8 p-6 bg-white rounded-xl shadow-lg">
+                <h3 class="text-xl font-bold mb-4">技术特性筛选</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <select id="filter-touch" class="filter-control block w-full p-2 border border-gray-300 rounded-md">
+                        <option value="all">所有触摸技术</option>
+                        <option value="Capacitive">电容式多点触摸</option>
+                        <option value="Resistive">电阻式单点触摸</option>
+                    </select>
+                    <select id="filter-script" class="filter-control block w-full p-2 border border-gray-300 rounded-md">
+                        <option value="all">所有脚本支持</option>
+                        <option value="JavaScript">JavaScript</option>
+                        <option value="VBScript">VBScript</option>
+                        <option value="none">不支持</option>
+                    </select>
+                    <select id="filter-interface" class="filter-control block w-full p-2 border border-gray-300 rounded-md">
+                        <option value="all">所有串行/DP接口</option>
+                        <option value="serial">支持串行接口</option>
+                        <option value="dp">支持PROFIBUS DP</option>
+                    </select>
+                    <button id="reset-filters" class="col-span-2 md:col-span-1 bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600">重置筛选</button>
                 </div>
-                <div id="tab-contents" class="p-6 md:p-8">
-                    
-                    <div id="unified-comfort" class="tab-content active" data-touch="Capacitive" data-script="JavaScript" data-interface="serial">
-                        <div class="flex items-center mb-2">
-                           <h3 class="text-2xl font-bold">精智系列舒适型面板 (Unified Comfort Panels)</h3>
-                           <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-green-500"></span>生命周期: 未来主力</div>
-                        </div>
-                        <p class="text-gray-600 mb-6">作为HMI旗舰，为最严苛的应用而生。它集成了工业边缘计算、多用户远程访问和顶级安全架构，是连接OT与IT世界的强大网关和实现工业4.0的理想平台。</p>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm rounded-lg overflow-hidden">
-                                <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
-                                <tbody>
-                                    <tr class="order-row"><td>目标应用</td><td>高性能、旗舰级，IT/OT融合，数字化应用</td></tr>
-                                    <tr class="order-row"><td>触摸技术</td><td>电容式多点触摸</td></tr>
-                                    <tr class="order-row"><td>处理器架构</td><td class="param-highlight">高性能 ARM</td></tr>
-                                    <tr class="order-row"><td>PROFINET接口</td><td>1x 千兆 + 1x 10/100Mbit (2端口交换机)</td></tr>
-                                    <tr class="order-row"><td>串行接口</td><td>是 (RS422/485)</td></tr>
-                                    <tr class="order-row"><td>USB 接口</td><td>4 x USB-A 3.1</td></tr>
-                                    <tr class="order-row"><td>SD卡插槽</td><td>2个 (SD/SDHC/SDXC)</td></tr>
-                                    <tr class="order-row"><td>工程软件</td><td>WinCC Unified Comfort (TIA Portal)</td></tr>
-                                    <tr class="order-row"><td>脚本语言</td><td class="param-highlight">JavaScript</td></tr>
-                                    <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">工业边缘集成</span>, 强大的Web客户端远程访问, 顶级安全架构, 矢量图形</td></tr>
-                                    <tr class="order-row"><td>官方文档</td><td><a href="https://support.industry.siemens.com/cs/ww/en/view/109773539" target="_blank" class="doc-link">操作手册</a> <a href="https://support.industry.siemens.com/cs/pd/159966?pdc=d&lc=en-WW" target="_blank" class="doc-link">技术数据</a></td></tr>
-                                    <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
-                                </tbody>
-                                <tbody class="order-number-body"></tbody>
-                                <tbody class="accessories-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
+            </section>
 
-                    <div id="unified-basic" class="tab-content" data-touch="Capacitive" data-script="JavaScript" data-interface="none">
-                        <div class="flex items-center mb-2">
-                            <h3 class="text-2xl font-bold">精智系列基本型面板 (Unified Basic Panels)</h3>
-                            <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-green-500"></span>生命周期: 未来主力</div>
-                        </div>
-                        <p class="text-gray-600 mb-6">新一代入门级标杆，将现代Web技术带入基础应用市场。拥有多点触控、JS脚本和免费Web客户端等革命性功能，为成本敏感型项目注入前所未有的强大能力。</p>
-                         <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm rounded-lg overflow-hidden">
-                                <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
-                                <tbody>
-                                    <tr class="order-row"><td>目标应用</td><td>新一代基础型，对标传统精简面板，但功能更强大</td></tr>
-                                    <tr class="order-row"><td>触摸技术</td><td>电容式多点触摸</td></tr>
-                                    <tr class="order-row"><td>处理器架构</td><td class="param-highlight">ARM</td></tr>
-                                    <tr class="order-row"><td>PROFINET接口</td><td>2个端口 (集成交换机)</td></tr>
-                                    <tr class="order-row"><td>USB 接口</td><td>4 x USB-A</td></tr>
-                                    <tr class="order-row"><td>SD卡插槽</td><td>2个 (SD/SDHC/SDXC)</td></tr>
-                                    <tr class="order-row"><td>工程软件</td><td>WinCC Unified Basic (TIA Portal)</td></tr>
-                                    <tr class="order-row"><td>脚本语言</td><td class="param-highlight">JavaScript</td></tr>
-                                    <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">集成Web客户端</span>, JavaScript支持, 多点触控, 性能远超经典精简系列</td></tr>
-                                    <tr class="order-row"><td>官方文档</td><td><a href="https://support.industry.siemens.com/cs/ww/en/view/109793162" target="_blank" class="doc-link">操作手册</a> <a href="https://support.industry.siemens.com/cs/pd/174950?pdc=d&lc=en-WW" target="_blank" class="doc-link">技术数据</a></td></tr>
-                                    <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
-                                </tbody>
-                                <tbody class="order-number-body"></tbody>
-                                <tbody class="accessories-body"></tbody>
-                            </table>
-                        </div>
+            <section id="series-tabs" class="mb-16">
+                <div class="bg-white rounded-xl shadow-lg">
+                    <div class="border-b border-gray-200">
+                        <nav class="flex flex-wrap -mb-px px-4" aria-label="Tabs" id="tab-buttons">
+                            <button class="tab-button active text-gray-600" data-tab="unified-comfort">精智统一 (Unified Comfort)</button>
+                            <button class="tab-button text-gray-600" data-tab="unified-basic">精智统一基础 (Unified Basic)</button>
+                            <button class="tab-button text-gray-600" data-tab="comfort">精智系列 (Comfort)</button>
+                            <button class="tab-button text-gray-600" data-tab="basic">精简系列 (Basic)</button>
+                            <button class="tab-button text-gray-600" data-tab="smart-line-plus">精彩增强 (Smart Line Plus)</button>
+                            <button class="tab-button text-gray-600" data-tab="smart-line">精彩系列 (Smart Line)</button>
+                            <button class="tab-button text-gray-600" data-tab="ipc">工控机 (Panel PC)</button>
+                            <button class="tab-button text-gray-600" data-tab="ifp">工业显示器 (IFP)</button>
+                            <button class="tab-button text-gray-600" data-tab="software">软件授权</button>
+                        </nav>
                     </div>
+                    <div id="tab-contents" class="p-6 md:p-8">
+                        
+                        <div id="unified-comfort" class="tab-content active" data-touch="Capacitive" data-script="JavaScript" data-interface="serial">
+                            <div class="flex items-center mb-2">
+                               <h3 class="text-2xl font-bold">精智系列舒适型面板 (Unified Comfort Panels)</h3>
+                               <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-green-500"></span>生命周期: 未来主力</div>
+                            </div>
+                            <p class="text-gray-600 mb-6">作为HMI旗舰，为最严苛的应用而生。它集成了工业边缘计算、多用户远程访问和顶级安全架构，是连接OT与IT世界的强大网关和实现工业4.0的理想平台。</p>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm rounded-lg overflow-hidden">
+                                    <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
+                                    <tbody>
+                                        <tr class="order-row"><td>目标应用</td><td>高性能、旗舰级，IT/OT融合，数字化应用</td></tr>
+                                        <tr class="order-row"><td>触摸技术</td><td>电容式多点触摸</td></tr>
+                                        <tr class="order-row"><td>处理器架构</td><td class="param-highlight">高性能 ARM</td></tr>
+                                        <tr class="order-row"><td>PROFINET接口</td><td>1x 千兆 + 1x 10/100Mbit (2端口交换机)</td></tr>
+                                        <tr class="order-row"><td>串行接口</td><td>是 (RS422/485)</td></tr>
+                                        <tr class="order-row"><td>USB 接口</td><td>4 x USB-A 3.1</td></tr>
+                                        <tr class="order-row"><td>SD卡插槽</td><td>2个 (SD/SDHC/SDXC)</td></tr>
+                                        <tr class="order-row"><td>工程软件</td><td>WinCC Unified Comfort (TIA Portal)</td></tr>
+                                        <tr class="order-row"><td>脚本语言</td><td class="param-highlight">JavaScript</td></tr>
+                                        <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">工业边缘集成</span>, 强大的Web客户端远程访问, 顶级安全架构, 矢量图形</td></tr>
+                                        <tr class="order-row" data-param="doc-links"><td>官方文档</td><td></td></tr>
+                                        <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
+                                    </tbody>
+                                    <tbody class="order-number-body"></tbody>
+                                    <tbody class="accessories-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
 
-                    <div id="smart-line" class="tab-content" data-touch="Resistive" data-script="JavaScript" data-interface="serial">
-                        <div class="flex items-center mb-2">
-                           <h3 class="text-2xl font-bold">精彩系列面板 (Smart Line V5)</h3>
-                           <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-blue-500"></span>生命周期: 市场主流</div>
+                        <div id="unified-basic" class="tab-content" data-touch="Capacitive" data-script="JavaScript" data-interface="none">
+                            <div class="flex items-center mb-2">
+                                <h3 class="text-2xl font-bold">精智系列基本型面板 (Unified Basic Panels)</h3>
+                                <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-green-500"></span>生命周期: 未来主力</div>
+                            </div>
+                            <p class="text-gray-600 mb-6">新一代入门级标杆，将现代Web技术带入基础应用市场。拥有多点触控、JS脚本和免费Web客户端等革命性功能，为成本敏感型项目注入前所未有的强大能力。</p>
+                             <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm rounded-lg overflow-hidden">
+                                    <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
+                                    <tbody>
+                                        <tr class="order-row"><td>目标应用</td><td>新一代基础型，对标传统精简面板，但功能更强大</td></tr>
+                                        <tr class="order-row"><td>触摸技术</td><td>电容式多点触摸</td></tr>
+                                        <tr class="order-row"><td>处理器架构</td><td class="param-highlight">ARM</td></tr>
+                                        <tr class="order-row"><td>PROFINET接口</td><td>2个端口 (集成交换机)</td></tr>
+                                        <tr class="order-row"><td>USB 接口</td><td>4 x USB-A</td></tr>
+                                        <tr class="order-row"><td>SD卡插槽</td><td>2个 (SD/SDHC/SDXC)</td></tr>
+                                        <tr class="order-row"><td>工程软件</td><td>WinCC Unified Basic (TIA Portal)</td></tr>
+                                        <tr class="order-row"><td>脚本语言</td><td class="param-highlight">JavaScript</td></tr>
+                                        <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">集成Web客户端</span>, JavaScript支持, 多点触控, 性能远超经典精简系列</td></tr>
+                                        <tr class="order-row" data-param="doc-links"><td>官方文档</td><td></td></tr>
+                                        <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
+                                    </tbody>
+                                    <tbody class="order-number-body"></tbody>
+                                    <tbody class="accessories-body"></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <p class="text-gray-600 mb-6">专为S7-200 SMART生态或独立应用打造的极致性价比之选。采用独立软件，提供强大的硬件、现代JS脚本和创新的IoT连接能力，是特定市场的经济型利器。</p>
-                         <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm rounded-lg overflow-hidden">
-                                <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
-                                <tbody>
-                                    <tr class="order-row"><td>目标应用</td><td>S7-200 SMART配套，极致性价比，灵活的第三方PLC连接</td></tr>
-                                    <tr class="order-row"><td>触摸技术</td><td>模拟电阻式触摸</td></tr>
-                                    <tr class="order-row"><td>处理器架构</td><td class="param-highlight">ARM 双核 1.2GHz</td></tr>
-                                    <tr class="order-row"><td>内存</td><td>20 MB (项目) / 256 MB (DDR3)</td></tr>
-                                    <tr class="order-row"><td>以太网接口</td><td>1个端口 (10/100 Mbit/s)</td></tr>
-                                    <tr class="order-row"><td>串行接口</td><td>是 (RS422/485/232)</td></tr>
-                                    <tr class="order-row"><td>USB 接口</td><td>1 x USB-A 2.0</td></tr>
-                                    <tr class="order-row"><td>SD卡插槽</td><td>1个 (Micro SD)</td></tr>
-                                    <tr class="order-row"><td>工程软件</td><td>WinCC flexible SMART V5 (独立软件)</td></tr>
-                                    <tr class="order-row"><td>脚本语言</td><td class="param-highlight">JavaScript</td></tr>
-                                    <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">可扩展IoT模块 (4G/Wi-Fi)</span>, 性价比极高, 与200SMART完美配合</td></tr>
-                                    <tr class="order-row"><td>官方文档</td><td><a href="https://support.industry.siemens.com/cs/cn/zh/view/109813892" target="_blank" class="doc-link">操作手册</a></td></tr>
-                                    <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
-                                </tbody>
-                                <tbody class="order-number-body"></tbody>
-                                <tbody class="accessories-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div id="comfort" class="tab-content" data-touch="Resistive" data-script="VBScript" data-interface="serial dp">
-                        <div class="flex items-center mb-2">
-                            <h3 class="text-2xl font-bold">精智系列面板 (Comfort Panels)</h3>
-                            <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-orange-500"></span>生命周期: 维护/淘汰阶段</div>
-                        </div>
-                        <p class="text-gray-600 mb-6">曾经的高性能行业标杆，技术成熟，应用广泛。现已进入生命周期后期（大尺寸已宣布淘汰），主要用于现有系统的维护、备件替换或基于VBScript的旧项目扩展。</p>
-                        <div class="overflow-x-auto">
-                           <table class="min-w-full text-sm rounded-lg overflow-hidden">
-                                <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
-                                <tbody>
-                                    <tr class="order-row"><td>目标应用</td><td>(旧) 高性能应用, 现主要用于系统维护和扩展</td></tr>
-                                    <tr class="order-row"><td>触摸技术</td><td>电阻式单点触摸</td></tr>
-                                    <tr class="order-row"><td>处理器架构</td><td class="param-highlight">x86 (7"及以上)</td></tr>
-                                    <tr class="order-row"><td>内存</td><td>4 MB 至 24 MB</td></tr>
-                                    <tr class="order-row"><td>PROFINET接口</td><td>2个端口 (集成交换机)</td></tr>
-                                    <tr class="order-row"><td>PROFIBUS DP接口</td><td>是 (标配)</td></tr>
-                                    <tr class="order-row"><td>USB 接口</td><td>2 x USB-A, 1 x USB-miniB</td></tr>
-                                    <tr class="order-row"><td>SD卡插槽</td><td>2个</td></tr>
-                                    <tr class="order-row"><td>工程软件</td><td>WinCC Comfort (TIA Portal)</td></tr>
-                                    <tr class="order-row"><td>脚本语言</td><td class="param-highlight">VBScript</td></tr>
-                                    <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">集成系统诊断</span>, 功能全面且稳定, 支持PROFIBUS DP</td></tr>
-                                    <tr class="order-row"><td>官方文档</td><td><a href="https://support.industry.siemens.com/cs/ww/en/view/109747503" target="_blank" class="doc-link">操作手册</a> <a href="https://support.industry.siemens.com/cs/pd/43496?pdc=d&lc=en-WW" target="_blank" class="doc-link">技术数据</a></td></tr>
-                                    <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
-                                </tbody>
-                                <tbody class="order-number-body"></tbody>
-                                <tbody class="accessories-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
 
-                    <div id="basic" class="tab-content" data-touch="Resistive" data-script="none" data-interface="dp">
-                        <div class="flex items-center mb-2">
-                            <h3 class="text-2xl font-bold">精简系列面板 (Basic Panels 2nd Gen)</h3>
-                            <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-yellow-500"></span>生命周期: 成熟经典</div>
+                        <div id="smart-line-plus" class="tab-content" data-touch="Resistive" data-script="JavaScript" data-interface="serial">
+                            <div class="flex items-center mb-2">
+                               <h3 class="text-2xl font-bold">精彩增强系列面板 (Smart Line Plus)</h3>
+                               <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-blue-500"></span>生命周期: 市场主流</div>
+                            </div>
+                            <p class="text-gray-600 mb-6">精彩系列的增强版，在保留原有高性价比和IoT功能的同时，增加了对S7-1200/1500 PLC的直连支持，为TIA博途用户提供了全新的经济型选择。</p>
+                             <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm rounded-lg overflow-hidden">
+                                    <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
+                                    <tbody>
+                                        <tr class="order-row"><td>目标应用</td><td>连接S7-1200/1500的高性价比项目，或传统的S7-200 SMART项目</td></tr>
+                                        <tr class="order-row"><td>触摸技术</td><td>模拟电阻式触摸</td></tr>
+                                        <tr class="order-row"><td>处理器架构</td><td class="param-highlight">ARM 双核 1.2GHz</td></tr>
+                                        <tr class="order-row"><td>内存</td><td>30 MB (项目) / 256 MB (DDR3)</td></tr>
+                                        <tr class="order-row"><td>以太网接口</td><td>1个端口 (10/100 Mbit/s)</td></tr>
+                                        <tr class="order-row"><td>串行接口</td><td>是 (RS422/485/232)</td></tr>
+                                        <tr class="order-row"><td>USB 接口</td><td>1 x USB-A 2.0</td></tr>
+                                        <tr class="order-row"><td>SD卡插槽</td><td>1个 (Micro SD)</td></tr>
+                                        <tr class="order-row"><td>工程软件</td><td>WinCC flexible SMART V5 SP1</td></tr>
+                                        <tr class="order-row"><td>脚本语言</td><td class="param-highlight">JavaScript</td></tr>
+                                        <tr class="order-row"><td>核心优势</td>
+                                            <td>
+                                                <ul class="list-disc list-inside space-y-1">
+                                                    <li class="param-highlight">支持 S7-1200/1500 (S7 Plus Communication)，支持符号寻址</li>
+                                                    <li class="param-highlight">支持 S7-1200/1500 (S7 PUT/GET Communication)，仅支持绝对地址寻址</li>
+                                                    <li class="param-highlight">支持导入博途工程文件中的PLC变量</li>
+                                                    <li class="param-highlight">支持把数据记录存储到HMI设备内存</li>
+                                                    <li>增强的MODBUS TCP/IP驱动</li>
+                                                </ul>
+                                            </td>
+                                        </tr>
+                                        <tr class="order-row" data-param="doc-links"><td>官方文档</td><td></td></tr>
+                                        <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
+                                    </tbody>
+                                    <tbody class="order-number-body"></tbody>
+                                    <tbody class="accessories-body"></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <p class="text-gray-600 mb-6">久经考验的入门级解决方案，为简单、成本极度敏感的应用提供最经济可靠的可视化功能。配备触摸屏和实体按键，是标准任务的经典执行者。</p>
-                        <div class="overflow-x-auto">
-                           <table class="min-w-full text-sm rounded-lg overflow-hidden">
-                                <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
-                                <tbody>
-                                    <tr class="order-row"><td>目标应用</td><td>基础型/入门级，成本敏感的标准任务</td></tr>
-                                    <tr class="order-row"><td>触摸技术</td><td>电阻式单点触摸</td></tr>
-                                    <tr class="order-row"><td>处理器架构</td><td class="param-highlight">ARM</td></tr>
-                                    <tr class="order-row"><td>内存</td><td>10 MB</td></tr>
-                                    <tr class="order-row"><td>PROFINET/DP接口</td><td>PN或DP版本可选 (1个端口)</td></tr>
-                                    <tr class="order-row"><td>USB 接口</td><td>1 x USB-A</td></tr>
-                                    <tr class="order-row"><td>SD卡插槽</td><td>否</td></tr>
-                                    <tr class="order-row"><td>工程软件</td><td>WinCC Basic (TIA Portal)</td></tr>
-                                    <tr class="order-row"><td>脚本语言</td><td class="param-highlight">不支持</td></tr>
-                                    <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">成本极低</span>, 触摸+按键组合操作, 技术成熟稳定</td></tr>
-                                    <tr class="order-row"><td>官方文档</td><td><a href="https://support.industry.siemens.com/cs/ww/en/view/109744153" target="_blank" class="doc-link">操作手册</a> <a href="https://support.industry.siemens.com/cs/pd/93122?pdc=d&lc=en-WW" target="_blank" class="doc-link">技术数据</a></td></tr>
-                                    <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
-                                </tbody>
-                                <tbody class="order-number-body"></tbody>
-                                <tbody class="accessories-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
 
-                    <div id="ipc" class="tab-content" data-touch="Resistive" data-script="all" data-interface="serial">
-                        <div class="flex items-center mb-2">
-                            <h3 class="text-2xl font-bold">工控机 (Panel PC): SIMATIC IPC377G 系列</h3>
-                            <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-blue-500"></span>生命周期: 市场主流</div>
+                        <div id="smart-line" class="tab-content" data-touch="Resistive" data-script="JavaScript" data-interface="serial">
+                            <div class="flex items-center mb-2">
+                               <h3 class="text-2xl font-bold">精彩系列面板 (Smart Line V5)</h3>
+                               <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-blue-500"></span>生命周期: 市场主流</div>
+                            </div>
+                            <p class="text-gray-600 mb-6">专为S7-200 SMART生态或独立应用打造的极致性价比之选。采用独立软件，提供强大的硬件、现代JS脚本和创新的IoT连接能力，是特定市场的经济型利器。</p>
+                             <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm rounded-lg overflow-hidden">
+                                    <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
+                                    <tbody>
+                                        <tr class="order-row"><td>目标应用</td><td>S7-200 SMART配套，极致性价比，灵活的第三方PLC连接</td></tr>
+                                        <tr class="order-row"><td>触摸技术</td><td>模拟电阻式触摸</td></tr>
+                                        <tr class="order-row"><td>处理器架构</td><td class="param-highlight">ARM 双核 1.2GHz</td></tr>
+                                        <tr class="order-row"><td>内存</td><td>20 MB (项目) / 256 MB (DDR3)</td></tr>
+                                        <tr class="order-row"><td>以太网接口</td><td>1个端口 (10/100 Mbit/s)</td></tr>
+                                        <tr class="order-row"><td>串行接口</td><td>是 (RS422/485/232)</td></tr>
+                                        <tr class="order-row"><td>USB 接口</td><td>1 x USB-A 2.0</td></tr>
+                                        <tr class="order-row"><td>SD卡插槽</td><td>1个 (Micro SD)</td></tr>
+                                        <tr class="order-row"><td>工程软件</td><td>WinCC flexible SMART V5</td></tr>
+                                        <tr class="order-row"><td>脚本语言</td><td class="param-highlight">JavaScript</td></tr>
+                                        <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">可扩展IoT模块 (4G/Wi-Fi)</span>, 性价比极高, 与200SMART完美配合</td></tr>
+                                        <tr class="order-row" data-param="doc-links"><td>官方文档</td><td></td></tr>
+                                        <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
+                                    </tbody>
+                                    <tbody class="order-number-body"></tbody>
+                                    <tbody class="accessories-body"></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <p class="text-gray-600 mb-6">一体化工控机，将计算单元 (CPU, 内存, 存储) 和触摸屏融合在单一外壳中。它是一个完整的、基于PC的、即装即用的解决方案，非常适合空间有限、需要紧凑型独立工作站的应用场景。</p>
-                        <div class="overflow-x-auto">
-                           <table class="min-w-full text-sm rounded-lg overflow-hidden">
-                                <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
-                                <tbody>
-                                    <tr class="order-row"><td>核心架构</td><td class="param-highlight">一体化工控机 (Panel PC)</td></tr>
-                                    <tr class="order-row"><td>目标应用</td><td>基于PC的、成本优化的HMI、数据采集或简单控制任务</td></tr>
-                                    <tr class="order-row"><td>处理器</td><td>Intel Atom x6413E (四核, 最高3.0 GHz)</td></tr>
-                                    <tr class="order-row"><td>内存</td><td>4 / 8 / 16 GB DDR4</td></tr>
-                                    <tr class="order-row"><td>存储</td><td>256 / 512 GB M.2 SSD</td></tr>
-                                    <tr class="order-row"><td>操作系统</td><td>可选 Windows 10 IoT Enterprise 2019 LTSC</td></tr>
-                                    <tr class="order-row"><td>以太网接口</td><td>2 x Gbit LAN (RJ45)</td></tr>
-                                    <tr class="order-row"><td>USB 接口</td><td>4 x USB 3.1</td></tr>
-                                    <tr class="order-row"><td>串行接口</td><td>4 x COM (2x RS232/485/422, 2x RS232)</td></tr>
-                                    <tr class="order-row"><td>视频输出</td><td>2 x DisplayPort</td></tr>
-                                    <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">高集成度</span>, 丰富的PC标准接口, 开放的Windows平台</td></tr>
-                                    <tr class="order-row"><td>官方文档</td><td><a href="https://support.industry.siemens.com/cs/ww/en/view/109806084" target="_blank" class="doc-link">操作手册</a> <a href="https://support.industry.siemens.com/cs/pd/174987?pdc=d&lc=en-WW" target="_blank" class="doc-link">技术数据</a></td></tr>
-                                    <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
-                                </tbody>
-                                <tbody class="order-number-body"></tbody>
-                                <tbody class="accessories-body"></tbody>
-                           </table>
+                        
+                        <div id="comfort" class="tab-content" data-touch="Resistive" data-script="VBScript" data-interface="serial dp">
+                            <div class="flex items-center mb-2">
+                                <h3 class="text-2xl font-bold">精智系列面板 (Comfort Panels)</h3>
+                                <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-orange-500"></span>生命周期: 维护/淘汰阶段</div>
+                            </div>
+                            <p class="text-gray-600 mb-6">曾经的高性能行业标杆，技术成熟，应用广泛。现已进入生命周期后期（大尺寸已宣布淘汰），主要用于现有系统的维护、备件替换或基于VBScript的旧项目扩展。</p>
+                            <div class="overflow-x-auto">
+                               <table class="min-w-full text-sm rounded-lg overflow-hidden">
+                                    <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
+                                    <tbody>
+                                        <tr class="order-row"><td>目标应用</td><td>(旧) 高性能应用, 现主要用于系统维护和扩展</td></tr>
+                                        <tr class="order-row"><td>触摸技术</td><td>电阻式单点触摸</td></tr>
+                                        <tr class="order-row"><td>处理器架构</td><td class="param-highlight">x86 (7"及以上)</td></tr>
+                                        <tr class="order-row"><td>内存</td><td>4 MB 至 24 MB</td></tr>
+                                        <tr class="order-row"><td>PROFINET接口</td><td>2个端口 (集成交换机)</td></tr>
+                                        <tr class="order-row"><td>PROFIBUS DP接口</td><td>是 (标配)</td></tr>
+                                        <tr class="order-row"><td>USB 接口</td><td>2 x USB-A, 1 x USB-miniB</td></tr>
+                                        <tr class="order-row"><td>SD卡插槽</td><td>2个</td></tr>
+                                        <tr class="order-row"><td>工程软件</td><td>WinCC Comfort (TIA Portal)</td></tr>
+                                        <tr class="order-row"><td>脚本语言</td><td class="param-highlight">VBScript</td></tr>
+                                        <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">集成系统诊断</span>, 功能全面且稳定, 支持PROFIBUS DP</td></tr>
+                                        <tr class="order-row" data-param="doc-links"><td>官方文档</td><td></td></tr>
+                                        <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
+                                    </tbody>
+                                    <tbody class="order-number-body"></tbody>
+                                    <tbody class="accessories-body"></tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div id="ifp" class="tab-content" data-touch="Resistive" data-script="all" data-interface="none">
-                         <div class="flex items-center mb-2">
-                             <h3 class="text-2xl font-bold">工业显示器 (IFP): SIMATIC IFP Basic 系列</h3>
-                             <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-blue-500"></span>生命周期: 市场主流</div>
-                         </div>
-                        <p class="text-gray-600 mb-6">专用的工业级触摸显示器，本身不具备计算能力，必须与一台独立的工控机 (IPC) 或服务器配合使用。适用于计算单元和显示单元需要分开安装的分布式系统架构。</p>
-                        <div class="overflow-x-auto">
-                           <table class="min-w-full text-sm rounded-lg overflow-hidden">
-                                <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
-                                <tbody>
-                                    <tr class="order-row"><td>核心架构</td><td class="param-highlight">工业触摸显示器 (Monitor)</td></tr>
-                                    <tr class="order-row"><td>目标应用</td><td>分布式系统，计算单元需置于控制柜，显示单元在现场</td></tr>
-                                    <tr class="order-row"><td>触摸技术</td><td>模拟电阻式单点触摸</td></tr>
-                                    <tr class="order-row"><td>视频接口</td><td>1 x DisplayPort, 1 x VGA</td></tr>
-                                    <tr class="order-row"><td>USB 集线器</td><td>1x 上行 (to PC), 2x 下行 (for Peripherals)</td></tr>
-                                    <tr class="order-row"><td>电源</td><td>24V DC</td></tr>
-                                    <tr class="order-row"><td>前面板防护</td><td>IP65</td></tr>
-                                    <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">架构灵活</span>, 性能可扩展 (取决于所连PC), 维护便捷</td></tr>
-                                    <tr class="order-row"><td>官方文档</td><td><a href="https://support.industry.siemens.com/cs/ww/en/view/109767107" target="_blank" class="doc-link">操作手册</a> <a href="https://support.industry.siemens.com/cs/pd/143525?pdc=d&lc=en-WW" target="_blank" class="doc-link">技术数据</a></td></tr>
-                                    <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
-                                </tbody>
-                                <tbody class="order-number-body"></tbody>
-                                <tbody class="accessories-body"></tbody>
-                           </table>
-                        </div>
-                    </div>
-                    
-                    <div id="software" class="tab-content">
-                        <h3 class="text-2xl font-bold mb-2">TIA Portal WinCC 工程软件授权对比</h3>
-                        <p class="text-gray-600 mb-6">为不同的HMI硬件和应用复杂度选择正确的工程软件授权至关重要。以下是TIA Portal中各主要WinCC版本的功能对比，帮助您做出明智决策。</p>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm rounded-lg overflow-hidden text-center">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="text-left">功能特性</th>
-                                        <th>WinCC Basic</th>
-                                        <th>WinCC Comfort</th>
-                                        <th>WinCC Advanced</th>
-                                        <th>WinCC Unified PC</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="software-license-body">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
 
+                        <div id="basic" class="tab-content" data-touch="Resistive" data-script="none" data-interface="dp">
+                            <div class="flex items-center mb-2">
+                                <h3 class="text-2xl font-bold">精简系列面板 (Basic Panels 2nd Gen)</h3>
+                                <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-yellow-500"></span>生命周期: 成熟经典</div>
+                            </div>
+                            <p class="text-gray-600 mb-6">久经考验的入门级解决方案，为简单、成本极度敏感的应用提供最经济可靠的可视化功能。配备触摸屏和实体按键，是标准任务的经典执行者。</p>
+                            <div class="overflow-x-auto">
+                               <table class="min-w-full text-sm rounded-lg overflow-hidden">
+                                    <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
+                                    <tbody>
+                                        <tr class="order-row"><td>目标应用</td><td>基础型/入门级，成本敏感的标准任务</td></tr>
+                                        <tr class="order-row"><td>触摸技术</td><td>电阻式单点触摸</td></tr>
+                                        <tr class="order-row"><td>处理器架构</td><td class="param-highlight">ARM</td></tr>
+                                        <tr class="order-row"><td>内存</td><td>10 MB</td></tr>
+                                        <tr class="order-row"><td>PROFINET/DP接口</td><td>PN或DP版本可选 (1个端口)</td></tr>
+                                        <tr class="order-row"><td>USB 接口</td><td>1 x USB-A</td></tr>
+                                        <tr class="order-row"><td>SD卡插槽</td><td>否</td></tr>
+                                        <tr class="order-row"><td>工程软件</td><td>WinCC Basic (TIA Portal)</td></tr>
+                                        <tr class="order-row"><td>脚本语言</td><td class="param-highlight">不支持</td></tr>
+                                        <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">成本极低</span>, 触摸+按键组合操作, 技术成熟稳定</td></tr>
+                                        <tr class="order-row" data-param="doc-links"><td>官方文档</td><td></td></tr>
+                                        <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
+                                    </tbody>
+                                    <tbody class="order-number-body"></tbody>
+                                    <tbody class="accessories-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div id="ipc" class="tab-content" data-touch="Resistive" data-script="all" data-interface="serial">
+                            <div class="flex items-center mb-2">
+                                <h3 class="text-2xl font-bold">工控机 (Panel PC): SIMATIC IPC377G 系列</h3>
+                                <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-blue-500"></span>生命周期: 市场主流</div>
+                            </div>
+                            <p class="text-gray-600 mb-6">一体化工控机，将计算单元 (CPU, 内存, 存储) 和触摸屏融合在单一外壳中。它是一个完整的、基于PC的、即装即用的解决方案，非常适合空间有限、需要紧凑型独立工作站的应用场景。</p>
+                            <div class="overflow-x-auto">
+                               <table class="min-w-full text-sm rounded-lg overflow-hidden">
+                                    <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
+                                    <tbody>
+                                        <tr class="order-row"><td>核心架构</td><td class="param-highlight">一体化工控机 (Panel PC)</td></tr>
+                                        <tr class="order-row"><td>目标应用</td><td>基于PC的、成本优化的HMI、数据采集或简单控制任务</td></tr>
+                                        <tr class="order-row"><td>处理器</td><td>Intel Atom x6413E (四核, 最高3.0 GHz)</td></tr>
+                                        <tr class="order-row"><td>内存</td><td>4 / 8 / 16 GB DDR4</td></tr>
+                                        <tr class="order-row"><td>存储</td><td>256 / 512 GB M.2 SSD</td></tr>
+                                        <tr class="order-row"><td>操作系统</td><td>可选 Windows 10 IoT Enterprise 2019 LTSC</td></tr>
+                                        <tr class="order-row"><td>以太网接口</td><td>2 x Gbit LAN (RJ45)</td></tr>
+                                        <tr class="order-row"><td>USB 接口</td><td>4 x USB 3.1</td></tr>
+                                        <tr class="order-row"><td>串行接口</td><td>4 x COM (2x RS232/485/422, 2x RS232)</td></tr>
+                                        <tr class="order-row"><td>视频输出</td><td>2 x DisplayPort</td></tr>
+                                        <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">高集成度</span>, 丰富的PC标准接口, 开放的Windows平台</td></tr>
+                                        <tr class="order-row" data-param="doc-links"><td>官方文档</td><td></td></tr>
+                                        <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
+                                    </tbody>
+                                    <tbody class="order-number-body"></tbody>
+                                    <tbody class="accessories-body"></tbody>
+                               </table>
+                            </div>
+                        </div>
+                        
+                        <div id="ifp" class="tab-content" data-touch="Resistive" data-script="all" data-interface="none">
+                             <div class="flex items-center mb-2">
+                                 <h3 class="text-2xl font-bold">工业显示器 (IFP): SIMATIC IFP Basic 系列</h3>
+                                 <div class="flex items-center ml-4 text-sm"><span class="lifecycle-dot bg-blue-500"></span>生命周期: 市场主流</div>
+                             </div>
+                            <p class="text-gray-600 mb-6">专用的工业级触摸显示器，本身不具备计算能力，必须与一台独立的工控机 (IPC) 或服务器配合使用。适用于计算单元和显示单元需要分开安装的分布式系统架构。</p>
+                            <div class="overflow-x-auto">
+                               <table class="min-w-full text-sm rounded-lg overflow-hidden">
+                                    <thead><tr><th colspan="2">硬件与软件参数</th></tr></thead>
+                                    <tbody>
+                                        <tr class="order-row"><td>核心架构</td><td class="param-highlight">工业触摸显示器 (Monitor)</td></tr>
+                                        <tr class="order-row"><td>目标应用</td><td>分布式系统，计算单元需置于控制柜，显示单元在现场</td></tr>
+                                        <tr class="order-row"><td>触摸技术</td><td>模拟电阻式单点触摸</td></tr>
+                                        <tr class="order-row"><td>视频接口</td><td>1 x DisplayPort, 1 x VGA</td></tr>
+                                        <tr class="order-row"><td>USB 集线器</td><td>1x 上行 (to PC), 2x 下行 (for Peripherals)</td></tr>
+                                        <tr class="order-row"><td>电源</td><td>24V DC</td></tr>
+                                        <tr class="order-row"><td>前面板防护</td><td>IP65</td></tr>
+                                        <tr class="order-row"><td>核心优势</td><td><span class="param-highlight">架构灵活</span>, 性能可扩展 (取决于所连PC), 维护便捷</td></tr>
+                                        <tr class="order-row" data-param="doc-links"><td>官方文档</td><td></td></tr>
+                                        <tr class="order-header-row"><th colspan="2">屏幕尺寸、订货号(MLFB)与价格信息</th></tr>
+                                    </tbody>
+                                    <tbody class="order-number-body"></tbody>
+                                    <tbody class="accessories-body"></tbody>
+                               </table>
+                            </div>
+                        </div>
+                        
+                        <div id="software" class="tab-content">
+                            <h3 class="text-2xl font-bold mb-2">TIA Portal WinCC 工程软件授权对比</h3>
+                            <p class="text-gray-600 mb-6">为不同的HMI硬件和应用复杂度选择正确的工程软件授权至关重要。以下是TIA Portal中各主要WinCC版本的功能对比，帮助您做出明智决策。</p>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm rounded-lg overflow-hidden text-center table-fixed">
+                                    <thead class="bg-gray-100">
+                                        <tr>
+                                            <th class="text-left software-table-feature-col w-[30%]">功能特性</th>
+                                            <th class="w-[17.5%]">WinCC Basic</th>
+                                            <th class="w-[17.5%]">WinCC Comfort</th>
+                                            <th class="w-[17.5%]">WinCC Advanced</th>
+                                            <th class="w-[17.5%]">WinCC Unified PC</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="software-license-body">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
-            </div>
-        </section>
-    </main>
+            </section>
+        </main>
 
     <div id="compare-sidebar">
         <div class="p-4 border-b">
@@ -580,8 +653,9 @@
 
     <footer class="bg-[#003459] text-white mt-16 py-6">
         <div class="container mx-auto text-center text-sm">
-            <p>本工具基于公开技术文档和价格表生成，仅供选型参考。价格为RMB列表价，折扣价为列表价x0.47，仅供参考。实际成交价请咨询销售。</p>
-            <p>&copy; 2025 HMI Data Visualization. All Rights Reserved.</p>
+            <p>本工具持续更新 V1.0版本</p>
+            <p>联系人邮箱：540955330@qq.com</p>
+            <p>谢礼阳 13372509117 版权所有 2025年7月</p>
         </div>
     </footer>
     
@@ -597,12 +671,12 @@
                         { size: '18.5"', models: [{ desc: '标准', number: '6AV2128-3SB06-0AX0', price: '洽询' }] },
                         { size: '21.5"', models: [{ desc: '标准', number: '6AV2128-3UB06-0AX0', price: '洽询' }] },
                         { size: '专用型号', models: [
-                            { desc: '7" PRO (IP65)', number: '6AV2128-3GB06-0AX1', price: '¥ 23,000' },
-                            { desc: '10.1" PRO (IP65)', number: '6AV2128-3KB06-0AX1', price: '¥ 33,500' },
-                            { desc: '12.1" PRO (IP65)', number: '6AV2128-3MB06-0AX1', price: '¥ 42,900' },
-                            { desc: '7" Hygienic (IP69)', number: '6AV2128-3GB36-0AX1', price: '¥ 29,100' },
-                            { desc: '10.1" Hygienic (IP69)', number: '6AV2128-3KB36-0AX1', price: '¥ 44,600' },
-                            { desc: '12.1" Hygienic (IP69)', number: '6AV2128-3MB36-0AX1', price: '¥ 58,100' },
+                            { desc: '7" PRO (IP65) <br><span class="text-xs font-normal text-gray-500">全方位IP65防护，用于支撑臂/底座安装</span>', number: '6AV2128-3GB06-0AX1', price: '¥ 23,000' },
+                            { desc: '10.1" PRO (IP65) <br><span class="text-xs font-normal text-gray-500">全方位IP65防护，用于支撑臂/底座安装</span>', number: '6AV2128-3KB06-0AX1', price: '¥ 33,500' },
+                            { desc: '12.1" PRO (IP65) <br><span class="text-xs font-normal text-gray-500">全方位IP65防护，用于支撑臂/底座安装</span>', number: '6AV2128-3MB06-0AX1', price: '¥ 42,900' },
+                            { desc: '7" Hygienic (IP69) <br><span class="text-xs font-normal text-gray-500">不锈钢面板，适用于食品/制药等卫生行业</span>', number: '6AV2128-3GB36-0AX1', price: '¥ 29,100' },
+                            { desc: '10.1" Hygienic (IP69) <br><span class="text-xs font-normal text-gray-500">不锈钢面板，适用于食品/制药等卫生行业</span>', number: '6AV2128-3KB36-0AX1', price: '¥ 44,600' },
+                            { desc: '12.1" Hygienic (IP69) <br><span class="text-xs font-normal text-gray-500">不锈钢面板，适用于食品/制药等卫生行业</span>', number: '6AV2128-3MB36-0AX1', price: '¥ 58,100' },
                         ] }
                     ],
                     accessories: [
@@ -620,6 +694,18 @@
                     accessories: [
                          { size: '存储卡', models: [{ desc: 'SIMATIC 2GB', number: '6AV2181-8XP00-0AX0', price: '¥ 1,500' }] },
                          { size: '保护膜', models: [{ desc: '适用于对应尺寸', number: '6AV2125-6....', price: '洽询' }] }
+                    ]
+                },
+                 'smart-line-plus': {
+                    main: [
+                        { size: '7"', models: [{ desc: '', number: '6AV6648-2AC11-3AX0', price: '洽询' }] },
+                        { size: '10.1"', models: [{ desc: '', number: '6AV6648-2AE11-3AX0', price: '洽询' }] },
+                    ],
+                    accessories: [
+                        { size: '扩展模块', models: [
+                            { desc: 'IoT模块 (WIFI)', number: '6AV6648-1CM01-3AX0', price: '¥ 497.37' },
+                            { desc: 'IoT模块 (4G)', number: '6AV6648-1CM11-3AX0', price: '¥ 718.43' }
+                        ] }
                     ]
                 },
                 'smart-line': {
@@ -687,6 +773,45 @@
                 }
             };
 
+            const docLinks = {
+                'unified-comfort': [
+                    { name: 'WinCC Unified 入门指南', url: 'https://support.industry.siemens.com/dl/dl-media/244/109954244/att_1263983/v1/177545453067_zh-CHS/zh-CHS/index.html#treeId=f637aa78ec078a476b3ad61d90d48b04' },
+                    { name: 'Unified 精智面板映像下载', url: 'https://support.industry.siemens.com/cs/document/109825605/simatic-hmi-%E6%93%8D%E4%BD%9C%E9%9D%A2%E6%9D%BF%E7%9A%84%E6%98%A0%E5%83%8F%E4%B8%8B%E8%BD%BD%E9%A1%B9%EF%BC%9Aunified-%E7%B2%BE%E6%99%BA%E9%9D%A2%E6%9D%BF?dti=0&lc=zh-CN' },
+                    { name: '样本集合', url: 'https://cache.industry.siemens.com/dl/dl-media/725/109988725/att_1328897/v1/191323107851_zh-CHS/zh-CHS/index.html#legalinfo' }
+                ],
+                'unified-basic': [
+                    { name: 'WinCC Unified 入门指南', url: 'https://support.industry.siemens.com/dl/dl-media/244/109954244/att_1263983/v1/177545453067_zh-CHS/zh-CHS/index.html#treeId=f637aa78ec078a476b3ad61d90d48b04' },
+                    { name: '样本集合', url: 'https://cache.industry.siemens.com/dl/dl-media/725/109988725/att_1328897/v1/191323107851_zh-CHS/zh-CHS/index.html#legalinfo' }
+                ],
+                'comfort': [
+                    { name: '精智面板/移动面板/精简面板 映像下载', url: 'https://support.industry.siemens.com/cs/document/109825750/simatic-hmi-%E6%93%8D%E4%BD%9C%E9%9D%A2%E6%9D%BF%E7%9A%84%E6%98%A0%E5%83%8F%E4%B8%8B%E8%BD%BD%EF%BC%9A%E7%B2%BE%E6%99%BA%E9%9D%A2%E6%9D%BF-%E7%A7%BB%E5%8A%A8%E9%9D%A2%E6%9D%BF-%E7%B2%BE%E7%AE%80%E9%9D%A2%E6%9D%BF?dti=0&lc=zh-CN' },
+                    { name: 'SIMATIC HMI 精智面板 TP1500/KP1500', url: 'https://support.industry.siemens.com/cs/document/109822224/simatic-hmi-%E7%B2%BE%E6%99%BA%E9%9D%A2%E6%9D%BF-tp1500-kp1500-comfort-v2-1?dti=0&lc=zh-CN' },
+                    { name: '精智面板合集', url: 'https://support.industry.siemens.com/dl/dl-media/233/49313233/att_1069145/v3/158409845259_zh-CHS/zh-CHS/index.html' },
+                    { name: '精智面板样本', url: 'https://support.industry.siemens.com/cs/document/49313233/simatic-hmi-%E6%93%8D%E4%BD%9C%E8%AE%BE%E5%A4%87-%E7%B2%BE%E6%99%BA%E9%9D%A2%E6%9D%BF?dti=0&lc=zh-CN' }
+                ],
+                'basic': [
+                    { name: '精智面板/移动面板/精简面板 映像下载', url: 'https://support.industry.siemens.com/cs/document/109825750/simatic-hmi-%E6%93%8D%E4%BD%9C%E9%9D%A2%E6%9D%BF%E7%9A%84%E6%98%A0%E5%83%8F%E4%B8%8B%E8%BD%BD%EF%BC%9A%E7%B2%BE%E6%99%BA%E9%9D%A2%E6%9D%BF-%E7%A7%BB%E5%8A%A8%E9%9D%A2%E6%9D%BF-%E7%B2%BE%E7%AE%80%E9%9D%A2%E6%9D%BF?dti=0&lc=zh-CN' },
+                    { name: '精简系列样本 (1)', url: 'https://cache.industry.siemens.com/dl/dl-media/350/90114350/att_1311898/v1/188429840651_zh-CHS/zh-CHS/index.html' },
+                    { name: '精简系列样本 (2)', url: 'https://support.industry.siemens.com/cs/document/90114350/simatic-hmi-%E6%93%8D%E4%BD%9C%E8%AE%BE%E5%A4%87-%E7%AC%AC%E4%BA%8C%E4%BB%A3%E7%B2%BE%E7%AE%80%E7%B3%BB%E5%88%97%E9%9D%A2%E6%9D%BF?dti=0&lc=zh-CN' }
+                ],
+                'smart-line-plus': [
+                    { name: '官网合集', url: 'https://w2.siemens.com.cn/smart/Product/HMI' },
+                    { name: 'HMI Smart Plus panel and SMART panel V5 Operating Instructions_zh-CN_zh-CN', url: 'https://support.industry.siemens.com/cs/document/109826277' },
+                    { name: 'SMART LINE Assistant 自述文件', url: 'https://support.industry.siemens.com/cs/document/109817296' }
+                ],
+                'smart-line': [
+                    { name: 'SMART Line Assistant 自述文件', url: 'https://support.industry.siemens.com/cs/document/109978418/smart-line-assistant-%E8%87%AA%E8%BF%B0%E6%96%87%E4%BB%B6%E2%80%9D?dti=0&lc=zh-CN' },
+                    { name: 'HMI 设备 Smart 700/1000 IE V5', url: 'https://support.industry.siemens.com/cs/document/109978413/simatic-hmi-hmi-%E8%AE%BE%E5%A4%87-smart-700-ie-v5-smart-1000-ie-v5?dti=0&lc=zh-CN' },
+                    { name: 'Smart 700/1000 IE V5 快速安装向导', url: 'https://support.industry.siemens.com/cs/document/109989737/smart-700-ie-v5-smart-1000-ie-v5-quick-install-guide?dti=0&lc=zh-CN' },
+                    { name: '精彩面板（ SMART LINE ）合集', url: 'https://support.industry.siemens.com/cs/document/109828404/-%E7%B2%BE%E5%BD%A9%E9%9D%A2%E6%9D%BF%EF%BC%88-smart-line-%EF%BC%89%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E5%90%88%E9%9B%86?dti=0&lc=zh-CN' }
+                ],
+                'ipc': [{ name: 'SIMATIC IPC377G合集', url: 'https://cache.industry.siemens.com/dl/dl-media/084/109806084/att_1092918/v3/ipc377g_operating_instructions_zh-CHS/zh-CHS/index.html#treeId=69378e016978d598420563bdb424db30' }],
+                'ifp': [
+                    { name: 'SIMATIC IFP Basic', url: 'https://support.industry.siemens.com/cs/document/109767074/simatic-ifp-basic-%E4%BE%9B%E8%B4%A7%E5%8F%91%E5%B8%83?dti=0&lc=zh-CN' },
+                    { name: 'SIMATIC IFP 合集', url: 'https://cache.industry.siemens.com/dl/dl-media/495/109767495/att_1136750/v1/166920504971_zh-CHS/zh-CHS/index.html#treeId=3937d4e615721d65d3f8c9e06dfd7da6' }
+                ]
+            };
+
             const softwareLicenseData = [
                 { feature: '目标设备', basic: 'Basic Panels', comfort: 'Comfort / Mobile / Basic Panels', advanced: 'Comfort / Mobile / Basic / PC Runtime', unified: 'Unified Comfort / PC Runtime' },
                 { feature: '脚本支持', basic: '<span class="software-table-cross">✗</span>', comfort: 'VBScript', advanced: 'VBScript, C-Script', unified: 'JavaScript' },
@@ -705,7 +830,7 @@
                  itemData.forEach(item => {
                     let modelsHtml = '';
                     item.models.forEach(model => {
-                        const description = model.desc ? `<span class="font-semibold text-gray-600">${model.desc}:</span>` : '';
+                        const description = model.desc ? `<span class="font-semibold text-gray-600">${model.desc}</span>` : '';
                         
                         let discountPriceHtml;
                         if (model.price.includes('洽询')) {
@@ -772,6 +897,13 @@
                         accBody.innerHTML = headerRow;
                         createPriceRows(product.accessories, accBody);
                     }
+                    
+                    const docCell = document.querySelector(`#${seriesId} [data-param="doc-links"] td:last-child`);
+                    if(docCell && docLinks[seriesId]) {
+                        docCell.innerHTML = docLinks[seriesId]
+                            .map((link, index) => `<a href="${link.url}" target="_blank" class="doc-link inline-block mr-6 mb-1">${index + 1}. ${link.name}</a>`)
+                            .join('');
+                    }
                 }
 
                 const softwareBody = document.getElementById('software-license-body');
@@ -780,11 +912,11 @@
                     softwareLicenseData.forEach(row => {
                          softwareHtml += `
                             <tr class="border-b">
-                                <td class="software-table-feature-col text-left">${row.feature}</td>
-                                <td>${row.basic}</td>
-                                <td>${row.comfort}</td>
-                                <td>${row.advanced}</td>
-                                <td>${row.unified}</td>
+                                <td class="software-table-feature-col text-left p-3">${row.feature}</td>
+                                <td class="p-3">${row.basic}</td>
+                                <td class="p-3">${row.comfort}</td>
+                                <td class="p-3">${row.advanced}</td>
+                                <td class="p-3">${row.unified}</td>
                             </tr>
                          `;
                     });
@@ -872,11 +1004,11 @@
                 if (compareList.length === 0) {
                     compareListDiv.innerHTML = '<p class="text-gray-500 text-sm">请从表格中添加产品进行对比。</p>';
                     compareSidebar.classList.remove('visible');
-                    document.body.classList.remove('compare-sidebar-visible');
+                    document.getElementById('page-wrapper').style.marginRight = '0';
                     startCompareBtn.disabled = true;
                 } else {
                     compareSidebar.classList.add('visible');
-                    document.body.classList.add('compare-sidebar-visible');
+                     document.getElementById('page-wrapper').style.marginRight = '350px';
                     startCompareBtn.disabled = false;
                     compareList.forEach(itemNumber => {
                         const itemDiv = document.createElement('div');
@@ -1058,7 +1190,79 @@
                 }
             });
             
-            // --- Wizard Logic ---
+            // --- Highlight Wizard Logic ---
+            const highlightWizardBtns = document.getElementById('highlight-wizard-buttons');
+            const highlightWizardResults = document.getElementById('highlight-wizard-results');
+            const highlightPrompt = document.getElementById('highlight-prompt');
+
+            const highlightData = {
+                tech: [
+                    { name: '精智统一 (Unified Comfort)', desc: '<span class="highlight-text">旗舰性能</span> - 集成边缘计算、多点触控、JS脚本，为数字化和IT/OT融合而生。', tab: 'unified-comfort' },
+                    { name: '精智统一基础 (Unified Basic)', desc: '<span class="highlight-text">现代入门</span> - 将多点触控、JS脚本等现代技术带给基础应用，性价比高。', tab: 'unified-basic' }
+                ],
+                cost: [
+                    { name: '精彩增强 (Smart Line Plus)', desc: '<span class="highlight-text">博途性价比</span> - 以Smart Line价格连接S7-1200/1500，TIA项目优选。', tab: 'smart-line-plus' },
+                    { name: '精彩系列 (Smart Line)', desc: '<span class="highlight-text">200SMART绝配</span> - 专为S7-200 SMART配套，成本优化到极致。', tab: 'smart-line' },
+                ],
+                stable: [
+                    { name: '精智系列 (Comfort)', desc: '<span class="highlight-text">成熟标杆</span> - 支持VBScript和DP总线，是旧项目维护和备件替换的首选。', tab: 'comfort' },
+                    { name: '精简系列 (Basic)', desc: '<span class="highlight-text">经济可靠</span> - 功能基础，价格最低，适用于最简单的标准任务。', tab: 'basic' }
+                ],
+                pc: [
+                    { name: '工控机 (Panel PC)', desc: '<span class="highlight-text">一体化PC</span> - 将HMI与Windows PC合二为一，开放、紧凑、功能强大。', tab: 'ipc' },
+                    { name: '工业显示器 (IFP)', desc: '<span class="highlight-text">分布式架构</span> - 仅作显示单元，与独立IPC配合，架构灵活。', tab: 'ifp' }
+                ]
+            };
+
+            highlightWizardBtns.addEventListener('click', function(e) {
+                const button = e.target.closest('.highlight-wizard-btn');
+                if (!button) return;
+
+                // Update button styles
+                this.querySelectorAll('.highlight-wizard-btn').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Hide prompt and show results
+                highlightPrompt.style.display = 'none';
+                const targetData = highlightData[button.dataset.target];
+                let resultsHtml = '';
+
+                targetData.forEach(item => {
+                    resultsHtml += `
+                        <div class="highlight-result show">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-grow">
+                                    <h4 class="font-bold">${item.name}</h4>
+                                    <p class="text-gray-600">${item.desc}</p>
+                                </div>
+                                <a href="#${item.tab}" data-tab-link="${item.tab}" class="view-details-link ml-2 flex-shrink-0 text-xs bg-blue-500 text-white py-1 px-2 rounded hover:bg-blue-600">查看详情</a>
+                            </div>
+                        </div>
+                    `;
+                });
+                highlightWizardResults.innerHTML = resultsHtml;
+            });
+
+            highlightWizardResults.addEventListener('click', function(e){
+                const link = e.target.closest('.view-details-link');
+                if(!link) return;
+                e.preventDefault();
+                const targetTabId = link.dataset.tabLink;
+
+                // Activate the corresponding tab
+                document.querySelector('.tab-button.active').classList.remove('active');
+                const newActiveButton = document.querySelector(`.tab-button[data-tab="${targetTabId}"]`);
+                newActiveButton.classList.add('active');
+                
+                document.querySelector('.tab-content.active').classList.remove('active');
+                document.getElementById(targetTabId).classList.add('active');
+
+                // Scroll to the tabs section
+                document.getElementById('series-tabs').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+
+
+            // --- Main Wizard Logic (Modal) ---
             const wizardModal = document.getElementById('wizard-modal');
             const openWizardBtn = document.getElementById('open-wizard-btn');
             const closeWizardBtn = document.getElementById('close-wizard-modal');
