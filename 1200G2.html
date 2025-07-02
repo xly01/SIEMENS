@@ -3,16 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>交互式S7-1200 G2配置助手</title>
+    <title>交互式S7-1200 G2配置助手 (V2)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-            background-color: #f8fafc; /* 使用slate-50背景色 */
+            background-color: #f8fafc; /* slate-50 */
         }
-        .step-card {
+        .step-card, .highlight-card {
             transition: all 0.3s ease-in-out;
+        }
+        .highlight-card {
+            cursor: pointer;
+        }
+        .highlight-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         .form-input {
             width: 100%;
@@ -66,6 +73,44 @@
             color: #4A5568;
             margin-top: 4px;
         }
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1050;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        .siemens-teal-text {
+            color: #009999;
+        }
     </style>
 </head>
 <body class="text-slate-800">
@@ -77,9 +122,75 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-10">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">交互式 S7-1200 G2 配置助手</h1>
+            <h1 class="text-3xl md:text-4xl font-bold siemens-teal-text">交互式 S7-1200 G2 配置助手</h1>
             <p class="mt-2 text-lg text-slate-600">根据您的I/O需求，智能生成一套完整的、高性价比的S7-1200 G2硬件配置方案。</p>
         </header>
+
+        <!-- S7-1200 G2 亮点展示区 -->
+        <section id="highlights" class="mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 亮点卡片 1: 性能 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="performance">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">核心性能跃升</h3>
+                        <p class="mt-1 text-slate-600 text-sm">更快的指令处理速度，带来更短的扫描周期和I/O响应，轻松胜任复杂实时任务。</p>
+                    </div>
+                </div>
+                <!-- 亮点卡片 2: 通信 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="communication">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">通信全面强化</h3>
+                        <p class="mt-1 text-slate-600 text-sm">标配双PROFINET口，支持MRP环网冗余和IRT同步实时通信，网络集成更强大可靠。</p>
+                    </div>
+                </div>
+                <!-- 亮点卡片 3: 存储 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="storage">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7l8-4 8 4m-8 12v4m0 0l-4-2m4 2l4-2" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">存储容量倍增</h3>
+                        <p class="mt-1 text-slate-600 text-sm">程序及数据存储器大幅扩展（最高300KB/750KB），从容应对复杂应用和海量数据。</p>
+                    </div>
+                </div>
+                <!-- 亮点卡片 4: 运动控制 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="motion">
+                    <div class="flex-shrink-0">
+                         <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">高级运动控制</h3>
+                        <p class="mt-1 text-slate-600 text-sm">集成更强运动控制功能，支持同步轴、定位轴等工艺对象，HSC/PTO增至8个。</p>
+                    </div>
+                </div>
+                <!-- 亮点卡片 5: 设计 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="design">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">紧凑灵活设计</h3>
+                        <p class="mt-1 text-slate-600 text-sm">尺寸缩小25%，采用Push-in端子，CPU可扩展更多信号板（如1214C支持2个SB）。</p>
+                    </div>
+                </div>
+                <!-- 亮点卡片 6: 诊断 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="diagnostics">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">智能诊断维护</h3>
+                        <p class="mt-1 text-slate-600 text-sm">集成安全功能(Failsafe)，增强系统日志(Syslog)，支持NFC近场通信，维护更便捷。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <main class="space-y-8">
             <section id="step1" class="step-card bg-white p-6 rounded-xl shadow-lg border border-slate-200">
@@ -177,9 +288,18 @@
             </section>
 
              <section id="step3" class="step-card bg-white p-6 rounded-xl shadow-lg border border-slate-200">
-                <div class="flex items-center mb-4">
-                    <div class="flex-shrink-0 bg-indigo-600 text-white rounded-full h-10 w-10 flex items-center justify-center text-xl font-bold">3</div>
-                    <h2 class="ml-4 text-2xl font-semibold text-slate-900">物料清单 (BOM)</h2>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-indigo-600 text-white rounded-full h-10 w-10 flex items-center justify-center text-xl font-bold">3</div>
+                        <h2 class="ml-4 text-2xl font-semibold text-slate-900">物料清单 (BOM)</h2>
+                    </div>
+                    <button id="copy-bom-btn" class="bg-slate-200 text-slate-700 hover:bg-slate-300 text-sm font-semibold py-2 px-4 rounded-lg transition-colors flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                          <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                          <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zM9.5 0A1.5 1.5 0 0 0 8 1.5v1A1.5 1.5 0 0 0 9.5 4h-3A1.5 1.5 0 0 0 5 2.5v-1A1.5 1.5 0 0 0 6.5 0h3z"/>
+                        </svg>
+                        <span>一键复制BOM</span>
+                    </button>
                 </div>
                 <p class="text-slate-600 mb-6">这是根据您的需求生成的完整硬件列表。价格仅为估算，请以实际报价为准。</p>
                 <div class="overflow-x-auto">
@@ -202,8 +322,47 @@
                     </table>
                 </div>
             </section>
+            
+            <!-- 推荐配套组件 -->
+            <section id="companion-products" class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                <h3 class="text-2xl font-semibold text-slate-900 mb-4">推荐配套组件</h3>
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-6 flex flex-col md:flex-row items-center gap-6">
+                    <div class="flex-shrink-0">
+                        <img src="https://placehold.co/150x100/009999/FFFFFF?text=HMI" alt="HMI触摸屏" class="rounded-lg">
+                    </div>
+                    <div class="flex-grow">
+                        <h4 class="text-xl font-bold text-slate-800">人机界面 (HMI)</h4>
+                        <p class="text-slate-600 mt-1 mb-4">为您的 S7-1200 G2 系统选择一款功能强大、显示清晰的HMI，是提升设备操作体验的关键。推荐使用新一代精智统一面板或高性价比的精彩系列面板。</p>
+                        <a href="https://xly01.github.io/SIEMENS/HMI" target="_blank" class="inline-block bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-indigo-700 transition-colors">
+                            前往HMI选型工具 &rarr;
+                        </a>
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
+
+    <!-- 亮点详情模态框 -->
+    <div id="highlight-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-start mb-4">
+                <h3 id="modal-title" class="text-2xl font-bold text-slate-900"></h3>
+                <button id="modal-close-btn" class="text-3xl font-light text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div id="modal-body" class="text-slate-600 space-y-4">
+                <!-- 内容将由JS动态填充 -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-slate-900 text-white mt-16 py-6">
+        <div class="container mx-auto text-center text-sm text-slate-300 space-y-2">
+            <p>本工具持续更新 V2.0 版本</p>
+            <p>联系人邮箱：540955330@qq.com</p>
+            <p>谢礼阳 13372509117 版权所有 2025年7月</p>
+        </div>
+    </footer>
 
 <script>
 // S7-1200 G2系列产品数据库 (价格根据用户提供的2025.1列表价全面更新)
@@ -240,6 +399,79 @@ const S7_1200_G2_DATA = {
     ]
 };
 
+// 亮点详情内容
+const highlightDetails = {
+    performance: {
+        title: '核心性能大幅跃升',
+        content: `S7-1200 G2最引人注目的亮点之一是其核心处理能力的显著增强。相比第一代产品，G2系列的CPU拥有更快的指令处理速度，这意味着更短的程序扫描周期和更快的I/O响应。这一提升对于需要高速数据处理和实时控制的复杂应用至关重要，例如高精度的定位、高速计数和复杂的闭环控制任务。`
+    },
+    communication: {
+        title: '通信功能全面强化',
+        content: `新一代的S7-1200 G2在通信方面进行了全面升级，使其成为工业物联网（IIoT）时代下理想的边缘计算设备：
+        <ul class="list-disc list-inside mt-2 space-y-2">
+            <li><strong class="text-slate-800">标配双PROFINET端口：</strong>所有CPU型号均标配两个PROFINET端口。这不仅方便了线性和环形网络拓扑的构建，还支持媒体冗余协议（MRP），从而在网络出现单点故障时确保通信的连续性和可靠性，大大提升了系统的可用性。</li>
+            <li><strong class="text-slate-800">支持更多PROFINET设备：</strong>G2控制器可以连接多达31个PROFINET IO设备，扩展能力显著增强，能够满足更广泛的设备集成需求。</li>
+            <li><strong class="text-slate-800">PROFINET IRT（同步实时）通信：</strong>支持PROFINET同步实时通信，为高要求的运动控制应用提供了精准的同步基础，确保了多轴运动的协调性和精确性。</li>
+        </ul>`
+    },
+    storage: {
+        title: '存储容量显著增加',
+        content: `为了满足现代自动化程序日益增长的复杂度和数据量，S7-1200 G2大幅扩展了其内存容量：
+        <ul class="list-disc list-inside mt-2 space-y-2">
+            <li><strong class="text-slate-800">更大的程序和数据存储器：</strong>程序存储器最高可达300KB，数据存储器最高可达750KB，为用户编写更复杂的控制逻辑、存储更多生产数据和配方提供了充足的空间。</li>
+            <li><strong class="text-slate-800">更大的内部装载存储器：</strong>8MB的内部装载存储器使得项目文件的存储和传输更加便捷。</li>
+        </ul>`
+    },
+    motion: {
+        title: '运动控制功能再上新台阶',
+        content: `S7-1200 G2拥有统一的运动控制资源池，总共为 <strong class="text-indigo-600">800个资源单位</strong>。它支持基于TIA Portal的工艺对象（TO）进行高级运动控制，例如：
+        <ul class="list-disc list-inside mt-2 space-y-2">
+            <li><strong>TO_SpeedAxis (速度轴)</strong></li>
+            <li><strong>TO_PositioningAxis (定位轴)</strong></li>
+            <li><strong class="text-indigo-600">TO_SynchronousAxis (同步轴) - 突破性功能！最多可支持5个同步轴。</strong></li>
+            <li><strong>TO_Kinematics (运动学)</strong></li>
+        </ul>
+        <div class="mt-4 p-3 bg-slate-100 rounded-lg">
+            <h4 class="font-bold text-slate-800">资源消耗说明：</h4>
+            <p class="text-sm">不同的工艺对象会占用不同数量的资源单位，在规划时需确保总消耗不超过800。计算方式如下：</p>
+            <ul class="list-disc list-inside mt-2 space-y-1 text-sm">
+                <li><strong>同步轴:</strong> 160 个资源单位 (800 / 160 = 5个轴)</li>
+                <li><strong>定位轴:</strong> 80 个资源单位</li>
+                <li><strong>速度控制轴:</strong> 40 个资源单位</li>
+                <li><strong>外部编码器:</strong> 80 个资源单位</li>
+                <li><strong>凸轮轨:</strong> 160 个资源单位</li>
+            </ul>
+        </div>
+        <p class="mt-2 text-sm">此外，高速计数器（HSC）和脉冲发生器（PTO/PWM）的数量也增加到了8个，为用户提供了更大的灵活性。</p>`
+    },
+    design: {
+        title: '紧凑设计与更高密度的I/O',
+        content: `
+        <ul class="list-disc list-inside mt-2 space-y-2">
+            <li><strong class="text-slate-800">节省安装空间：</strong>G2系列的设计更为紧凑，DIN导轨的占用长度减少了约25%，有助于在有限的电控柜空间内实现更高密度的布局。</li>
+            <li><strong class="text-slate-800">高密度端子和可移动接线：</strong>采用了推入式（Push-in）接线端子，接线更快速、更可靠。可移动的高密度端子设计方便了预接线，简化了安装和维护过程。</li>
+            <li><strong class="text-slate-800">增强的信号板概念：</strong>CPU本体可扩展的信号板数量增加，例如CPU 1214C可以支持最多两个信号板，在不增加控制器本体宽度的情况下，灵活地增加少量I/O点数或通信接口。</li>
+        </ul>`
+    },
+    diagnostics: {
+        title: '增强的安全性与诊断功能',
+        content: `
+        <ul class="list-disc list-inside mt-2 space-y-2">
+            <li><strong class="text-slate-800">集成的安全功能：</strong>提供故障安全型（Failsafe）CPU选项，将标准自动化与安全技术集成于一体，简化了机器安全方案的设计。</li>
+            <li><strong class="text-slate-800">系统日志（Syslog）：</strong>增强的系统日志功能，可以记录详细的事件信息，便于故障诊断和系统维护。</li>
+            <li><strong class="text-slate-800">NFC功能：</strong>集成了近场通信（NFC）功能，用户可以通过智能手机上的SIMATIC S7-1200 G2 NFC App，在设备<strong class="text-indigo-600">断电的情况</strong>下实现以下操作：
+                <ul class="list-decimal list-inside ml-4 mt-1 text-sm">
+                    <li><strong>识别：</strong>读取CPU订货号、序列号、固件版本等硬件信息。</li>
+                    <li><strong>诊断：</strong>读取CPU的诊断缓冲区和状态信息。</li>
+                    <li><strong>配置：</strong>读取和写入IP地址。</li>
+                    <li><strong>操作：</strong>切换CPU运行模式 (RUN/STOP)，设定时间，恢复出厂设置。</li>
+                </ul>
+            </li>
+        </ul>`
+    }
+};
+
+
 let powerChart;
 
 // 页面加载完成后初始化
@@ -254,8 +486,87 @@ document.addEventListener('DOMContentLoaded', () => {
         options: { maintainAspectRatio: false, responsive: true, indexAxis: 'y', scales: { x: { beginAtZero: true, title: { display: true, text: 'mA' } } }, plugins: { legend: { position: 'top' } } }
     });
 
+    // 初始化模态框和BOM复制功能
+    initializeModal();
+    initializeCopyBOM();
+
     updateConfiguration();
 });
+
+// 初始化模态框事件监听
+function initializeModal() {
+    const modalOverlay = document.getElementById('highlight-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const closeModalBtn = document.getElementById('modal-close-btn');
+    const highlightCards = document.querySelectorAll('.highlight-card');
+
+    highlightCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const highlightKey = card.dataset.highlight;
+            const details = highlightDetails[highlightKey];
+            if (details) {
+                modalTitle.textContent = details.title;
+                modalBody.innerHTML = details.content;
+                modalOverlay.classList.add('active');
+            }
+        });
+    });
+
+    const closeModal = () => {
+        modalOverlay.classList.remove('active');
+    };
+
+    closeModalBtn.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (event) => {
+        if (event.target === modalOverlay) {
+            closeModal();
+        }
+    });
+}
+
+// 初始化一键复制BOM功能
+function initializeCopyBOM() {
+    const copyBtn = document.getElementById('copy-bom-btn');
+    copyBtn.addEventListener('click', () => {
+        const bomTableBody = document.getElementById('bom-table');
+        const bomTableFoot = document.getElementById('bom-footer');
+        let bomText = "组件类型\t型号描述\t订货号\t数量\t估算单价 (RMB)\t估算总价 (RMB)\n";
+
+        bomTableBody.querySelectorAll('tr').forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td')).map(cell => `"${cell.innerText.replace(/"/g, '""')}"`);
+            bomText += cells.join('\t') + '\n';
+        });
+
+        bomTableFoot.querySelectorAll('tr').forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td')).map(cell => `"${cell.innerText.replace(/"/g, '""')}"`);
+            bomText += cells.join('\t') + '\n';
+        });
+        
+        // 使用 Clipboard API 写入文本
+        navigator.clipboard.writeText(bomText).then(() => {
+            const originalBtnContent = copyBtn.innerHTML;
+            copyBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16">
+                  <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022z"/>
+                </svg>
+                <span>已复制!</span>`;
+            copyBtn.classList.add('bg-green-500', 'text-white');
+            copyBtn.classList.remove('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300');
+
+
+            setTimeout(() => {
+                copyBtn.innerHTML = originalBtnContent;
+                copyBtn.classList.remove('bg-green-500', 'text-white');
+                copyBtn.classList.add('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300');
+            }, 2000);
+        }).catch(err => {
+            console.error('无法复制BOM: ', err);
+            // 可以添加一个错误提示
+        });
+    });
+}
+
 
 // 从表单获取所有用户输入
 function getInputs() {
