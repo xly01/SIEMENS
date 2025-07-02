@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交互式S7-1200 G2配置助手 (V2)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .step-card, .highlight-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .highlight-card {
+            cursor: pointer;
+        }
+        .highlight-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #cbd5e1; /* slate-300 */
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #4f46e5; /* indigo-600 */
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4);
+        }
+        .result-highlight {
+            color: #4f46e5; /* indigo-600 */
+        }
+        .error-message {
+            color: #b91c1c; /* red-800 */
+            background-color: #fee2e2; /* red-100 */
+            border-left: 4px solid #ef4444; /* red-500 */
+        }
+         .success-message {
+            color: #065f46; /* green-800 */
+            background-color: #d1fae5; /* green-100 */
+            border-left: 4px solid #10b981; /* green-500 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            max-width: 500px;
+            margin: auto;
+        }
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1050;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        .siemens-teal-text {
+            color: #009999;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold siemens-teal-text">交互式 S7-1200 G2 配置助手</h1>
+            <p class="mt-2 text-lg text-slate-600">根据您的I/O需求，智能生成一套完整的、高性价比的S7-1200 G2硬件配置方案。</p>
+        </header>
+
+        <!-- S7-1200 G2 亮点展示区 -->
+        <section id="highlights" class="mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 亮点卡片 1: 性能 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="performance">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">核心性能跃升</h3>
+                        <p class="mt-1 text-slate-600 text-sm">更快的指令处理速度，带来更短的扫描周期和I/O响应，轻松胜任复杂实时任务。</p>
+                    </div>
+                </div>
+                <!-- 亮点卡片 2: 通信 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="communication">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">通信全面强化</h3>
+                        <p class="mt-1 text-slate-600 text-sm">标配双PROFINET口，支持MRP环网冗余和IRT同步实时通信，网络集成更强大可靠。</p>
+                    </div>
+                </div>
+                <!-- 亮点卡片 3: 存储 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="storage">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7l8-4 8 4m-8 12v4m0 0l-4-2m4 2l4-2" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">存储容量倍增</h3>
+                        <p class="mt-1 text-slate-600 text-sm">程序及数据存储器大幅扩展（最高300KB/750KB），从容应对复杂应用和海量数据。</p>
+                    </div>
+                </div>
+                <!-- 亮点卡片 4: 运动控制 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="motion">
+                    <div class="flex-shrink-0">
+                         <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">高级运动控制</h3>
+                        <p class="mt-1 text-slate-600 text-sm">集成更强运动控制功能，支持同步轴、定位轴等工艺对象，HSC/PTO增至8个。</p>
+                    </div>
+                </div>
+                <!-- 亮点卡片 5: 设计 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="design">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">紧凑灵活设计</h3>
+                        <p class="mt-1 text-slate-600 text-sm">尺寸缩小25%，采用Push-in端子，CPU可扩展更多信号板（如1214C支持2个SB）。</p>
+                    </div>
+                </div>
+                <!-- 亮点卡片 6: 诊断 -->
+                <div class="highlight-card bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex items-start space-x-4" data-highlight="diagnostics">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900">智能诊断维护</h3>
+                        <p class="mt-1 text-slate-600 text-sm">集成安全功能(Failsafe)，增强系统日志(Syslog)，支持NFC近场通信，维护更便捷。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <main class="space-y-8">
+            <section id="step1" class="step-card bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0 bg-indigo-600 text-white rounded-full h-10 w-10 flex items-center justify-center text-xl font-bold">1</div>
+                    <h2 class="ml-4 text-2xl font-semibold text-slate-900">定义项目需求</h2>
+                </div>
+                <p class="text-slate-600 mb-6">请在此输入您项目所需的所有I/O点数和功能。本工具将根据您的输入实时计算最佳配置。所有未填写的项目将默认为0或不需要。</p>
+                <div id="config-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2 text-slate-700">数字量 I/O</h3>
+                        <div class="space-y-3">
+                            <div><label class="block text-sm font-medium text-slate-600">数字量输入 (DI):</label><input type="number" id="di" min="0" value="30" class="form-input"></div>
+                            <div><label class="block text-sm font-medium text-slate-600">数字量输出 (DO):</label><input type="number" id="do_t" min="0" value="26" class="form-input"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2 text-slate-700">模拟量 I/O</h3>
+                        <div class="space-y-3">
+                            <div><label class="block text-sm font-medium text-slate-600">模拟量输入 (AI):</label><input type="number" id="ai" min="0" value="0" class="form-input"></div>
+                            <div><label class="block text-sm font-medium text-slate-600">模拟量输出 (AO):</label><input type="number" id="ao" min="0" value="0" class="form-input"></div>
+                        </div>
+                    </div>
+                     <div>
+                        <h3 class="font-semibold text-lg mb-2 text-slate-700">温度测量</h3>
+                        <div class="space-y-3">
+                             <div><label class="block text-sm font-medium text-slate-600">热电偶 (TC):</label><input type="number" id="tc" min="0" value="0" class="form-input"></div>
+                            <div><label class="block text-sm font-medium text-slate-600">热电阻 (RTD):</label><input type="number" id="rtd" min="0" value="0" class="form-input"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2 text-slate-700">其他需求</h3>
+                        <div class="space-y-3">
+                            <div><label class="block text-sm font-medium text-slate-600">高速计数器 (HSC):</label><input type="number" id="hsc" min="0" value="0" class="form-input"></div>
+                             <div class="flex items-center pt-2"><input type="checkbox" id="comm_rs485" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="comm_rs485" class="ml-2 block text-sm text-slate-600">需要 RS485/232</label></div>
+                             <div class="flex items-center pt-2"><input type="checkbox" id="fail_safe" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="fail_safe" class="ml-2 block text-sm text-slate-600">需要安全功能</label></div>
+                            <div>
+                                <label for="expansion_reserve" class="block text-sm font-medium text-slate-600">未来扩展预留:</label>
+                                <select id="expansion_reserve" class="form-input">
+                                    <option value="0">0%</option>
+                                    <option value="10">10%</option>
+                                    <option value="20" selected>20%</option>
+                                    <option value="30">30%</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="step2" class="step-card bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                 <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0 bg-indigo-600 text-white rounded-full h-10 w-10 flex items-center justify-center text-xl font-bold">2</div>
+                    <h2 class="ml-4 text-2xl font-semibold text-slate-900">配置推荐与校验</h2>
+                </div>
+                <div id="validation-summary" class="mb-6 p-4 rounded-lg"></div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="font-semibold text-lg mb-3 text-slate-700">推荐硬件</h3>
+                        <div class="space-y-4">
+                           <div>
+                                <h4 class="font-medium text-slate-600">中央处理器 (CPU):</h4>
+                                <p id="cpu-result" class="p-2 bg-slate-100 rounded-md">-</p>
+                           </div>
+                           <div>
+                                <h4 class="font-medium text-slate-600">信号板 (SB) / 通信板 (CB):</h4>
+                                <div id="sb-result" class="p-2 bg-slate-100 rounded-md min-h-[40px]">-</div>
+                           </div>
+                           <div>
+                                <h4 class="font-medium text-slate-600">扩展模块 (SM / CM):</h4>
+                               <div id="modules-result" class="p-2 bg-slate-100 rounded-md min-h-[80px]">-</div>
+                           </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg mb-3 text-slate-700">配置校验</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-medium text-slate-600 mb-2">扩展槽位占用:</h4>
+                                <div id="slots-result" class="p-2 bg-slate-100 rounded-md space-y-2">
+                                    <p class="text-sm text-slate-500">等待输入...</p>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-slate-600 mb-2">5V DC 功率预算:</h4>
+                                <div class="p-2 bg-slate-100 rounded-md">
+                                    <div class="chart-container">
+                                        <canvas id="power-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+             <section id="step3" class="step-card bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-indigo-600 text-white rounded-full h-10 w-10 flex items-center justify-center text-xl font-bold">3</div>
+                        <h2 class="ml-4 text-2xl font-semibold text-slate-900">物料清单 (BOM)</h2>
+                    </div>
+                    <button id="copy-bom-btn" class="bg-slate-200 text-slate-700 hover:bg-slate-300 text-sm font-semibold py-2 px-4 rounded-lg transition-colors flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                          <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                          <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zM9.5 0A1.5 1.5 0 0 0 8 1.5v1A1.5 1.5 0 0 0 9.5 4h-3A1.5 1.5 0 0 0 5 2.5v-1A1.5 1.5 0 0 0 6.5 0h3z"/>
+                        </svg>
+                        <span>一键复制BOM</span>
+                    </button>
+                </div>
+                <p class="text-slate-600 mb-6">这是根据您的需求生成的完整硬件列表。如需获取报价，请联系我们。</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">组件类型</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">型号描述</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">订货号</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">数量</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">价格</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bom-table" class="bg-white divide-y divide-slate-200">
+                            <tr><td colspan="5" class="p-4 text-center text-slate-500">等待配置生成...</td></tr>
+                        </tbody>
+                        <tfoot id="bom-footer" class="bg-slate-50 font-bold">
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+            
+            <!-- 推荐配套组件 -->
+            <section id="companion-products" class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                <h3 class="text-2xl font-semibold text-slate-900 mb-4">推荐配套组件</h3>
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-6 flex flex-col md:flex-row items-center gap-6">
+                    <div class="flex-shrink-0">
+                        <img src="https://placehold.co/150x100/009999/FFFFFF?text=HMI" alt="HMI触摸屏" class="rounded-lg">
+                    </div>
+                    <div class="flex-grow">
+                        <h4 class="text-xl font-bold text-slate-800">人机界面 (HMI)</h4>
+                        <p class="text-slate-600 mt-1 mb-4">为您的 S7-1200 G2 系统选择一款功能强大、显示清晰的HMI，是提升设备操作体验的关键。推荐使用新一代精智统一面板或高性价比的精彩系列面板。</p>
+                        <a href="https://xly01.github.io/SIEMENS/HMI" target="_blank" class="inline-block bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-indigo-700 transition-colors">
+                            前往HMI选型工具 &rarr;
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- 亮点详情模态框 -->
+    <div id="highlight-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-start mb-4">
+                <h3 id="modal-title" class="text-2xl font-bold text-slate-900"></h3>
+                <button id="modal-close-btn" class="text-3xl font-light text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div id="modal-body" class="text-slate-600 space-y-4">
+                <!-- 内容将由JS动态填充 -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-slate-900 text-white mt-16 py-6">
+        <div class="container mx-auto text-center text-sm text-slate-300 space-y-2">
+            <p>本工具持续更新 V2.0 版本</p>
+            <p>联系人邮箱：540955330@qq.com</p>
+            <p>谢礼阳 13372509117 版权所有 2025年7月</p>
+        </div>
+    </footer>
+
+<script>
+// S7-1200 G2系列产品数据库 (价格用于内部逻辑计算，不会显示)
+const S7_1200_G2_DATA = {
+    cpus: [
+        { id: '1212C', name: 'CPU 1212C DC/DC/DC G2', order: '6ES7212-1AG50-0XB0', di: 8, do_t: 6, sm: 2, sb: 1, hsc: 6, power: 750, memory: 150, f_cpu: false, price: 1248 },
+        { id: '1212FC', name: 'CPU 1212FC DC/DC/DC G2', order: '6ES7212-1AF50-0XB0', di: 8, do_t: 6, sm: 2, sb: 1, hsc: 6, power: 750, memory: 200, f_cpu: true, price: 3200 },
+        { id: '1214C', name: 'CPU 1214C DC/DC/DC G2', order: '6ES7214-1AH50-0XB0', di: 14, do_t: 10, sm: 8, sb: 2, hsc: 8, power: 1200, memory: 250, f_cpu: false, price: 2148 },
+        { id: '1214FC', name: 'CPU 1214FC DC/DC/DC G2', order: '6ES7214-1AF50-0XB0', di: 14, do_t: 10, sm: 8, sb: 2, hsc: 8, power: 1200, memory: 300, f_cpu: true, price: 4500 },
+    ],
+    sbs: [ // 信号板
+        { type: 'di', points: 8, name: 'SB 1221, DI 8x24VDC', order: '6ES7221-3BF50-0XB0', power: 40, price: 451 },
+        { type: 'do_t', points: 8, name: 'SB 1222, DQ 8x24VDC', order: '6ES7222-5BF50-0XB0', power: 120, price: 451 },
+        { type: 'dido_t', di: 4, do_t: 4, name: 'SB 1223, DI 4/DQ 4x24VDC', order: '6ES7223-7BF50-0XB0', power: 55, price: 451 },
+        { type: 'ai', points: 4, name: 'SB 1231, AI 4x14bit', order: '6ES7231-4HD50-0XB0', power: 65, price: 491 },
+        { type: 'ao', points: 4, name: 'SB 1232, AQ 4x14bit', order: '6ES7232-4HD50-0XB0', power: 150, price: 703 },
+        { type: 'aiao', ai: 2, ao: 2, name: 'SB 1233, AI 2/AQ 2', order: '6ES7233-4HD50-0XB0', power: 85, price: 703 },
+        { type: 'rtd_sb', points: 2, name: 'SB 1231, 2xRTD', order: '6ES7231-5PB50-0XB0', power: 85, price: 703 },
+        { type: 'tc_sb', points: 4, name: 'SB 1231, 4xTC', order: '6ES7231-5QD50-0XB0', power: 85, price: 703 },
+        { type: 'comm_rs485', points: 1, name: 'SB 1241, RS485', order: '6ES7241-1CA50-0XB0', power: 50, is_sb: true, price: 650 }
+    ],
+    sms: [ // 信号模块
+        { type: 'di', points: 16, name: 'SM 1221, DI 16x24VDC', order: '6ES7221-1BH50-0XB0', power: 80, f_module: false, price: 976 },
+        { type: 'do_t', points: 16, name: 'SM 1222, DQ 16x24VDC', order: '6ES7222-5BH50-0XB0', power: 160, f_module: false, price: 976 },
+        { type: 'ai', points: 8, name: 'SM 1231, AI 8x13bit', order: '6ES7231-4HF50-0XB0', power: 100, f_module: false, price: 2052 },
+        { type: 'ao', points: 8, name: 'SM 1232, AQ 8x14bit', order: '6ES7232-4HF50-0XB0', power: 180, f_module: false, price: 2248 },
+        { type: 'rtd', points: 4, name: 'SM 1231, 4xRTD', order: '6ES7231-5PD50-0XB0', power: 85, f_module: false, price: 2001 },
+        { type: 'tc', points: 8, name: 'SM 1231, 8xTC', order: '6ES7231-5QF50-0XB0', power: 85, f_module: false, price: 2001 },
+        { type: 'comm_rs485', points: 1, name: 'CM 1241, RS232/422/485', order: '6ES7241-1EA50-0XB0', power: 200, is_cm: true, price: 750 }
+    ],
+    accessories: [
+        { id: 'PM', name: '电源模块 PM1207 24V/5A', order: '6EP3333-4SB00-3AX0', price: 950 },
+        { id: 'SMC', name: '存储卡 4MB (可选)', order: '6ES7954-8LC04-0AA0', price: 313 },
+    ]
+};
+
+// 亮点详情内容
+const highlightDetails = {
+    performance: {
+        title: '核心性能大幅跃升',
+        content: `S7-1200 G2最引人注目的亮点之一是其核心处理能力的显著增强。相比第一代产品，G2系列的CPU拥有更快的指令处理速度，这意味着更短的程序扫描周期和更快的I/O响应。这一提升对于需要高速数据处理和实时控制的复杂应用至关重要，例如高精度的定位、高速计数和复杂的闭环控制任务。`
+    },
+    communication: {
+        title: '通信功能全面强化',
+        content: `新一代的S7-1200 G2在通信方面进行了全面升级，使其成为工业物联网（IIoT）时代下理想的边缘计算设备：
+        <ul class="list-disc list-inside mt-2 space-y-2">
+            <li><strong class="text-slate-800">标配双PROFINET端口：</strong>所有CPU型号均标配两个PROFINET端口。这不仅方便了线性和环形网络拓扑的构建，还支持媒体冗余协议（MRP），从而在网络出现单点故障时确保通信的连续性和可靠性，大大提升了系统的可用性。</li>
+            <li><strong class="text-slate-800">支持更多PROFINET设备：</strong>G2控制器可以连接多达31个PROFINET IO设备，扩展能力显著增强，能够满足更广泛的设备集成需求。</li>
+            <li><strong class="text-slate-800">PROFINET IRT（同步实时）通信：</strong>支持PROFINET同步实时通信，为高要求的运动控制应用提供了精准的同步基础，确保了多轴运动的协调性和精确性。</li>
+        </ul>`
+    },
+    storage: {
+        title: '存储容量显著增加',
+        content: `为了满足现代自动化程序日益增长的复杂度和数据量，S7-1200 G2大幅扩展了其内存容量：
+        <ul class="list-disc list-inside mt-2 space-y-2">
+            <li><strong class="text-slate-800">更大的程序和数据存储器：</strong>程序存储器最高可达300KB，数据存储器最高可达750KB，为用户编写更复杂的控制逻辑、存储更多生产数据和配方提供了充足的空间。</li>
+            <li><strong class="text-slate-800">更大的内部装载存储器：</strong>8MB的内部装载存储器使得项目文件的存储和传输更加便捷。</li>
+        </ul>`
+    },
+    motion: {
+        title: '运动控制功能再上新台阶',
+        content: `S7-1200 G2拥有统一的运动控制资源池，总共为 <strong class="text-indigo-600">800个资源单位</strong>。它支持基于TIA Portal的工艺对象（TO）进行高级运动控制，例如：
+        <ul class="list-disc list-inside mt-2 space-y-2">
+            <li><strong>TO_SpeedAxis (速度轴)</strong></li>
+            <li><strong>TO_PositioningAxis (定位轴)</strong></li>
+            <li><strong class="text-indigo-600">TO_SynchronousAxis (同步轴) - 突破性功能！最多可支持5个同步轴。</strong></li>
+            <li><strong>TO_Kinematics (运动学)</strong></li>
+        </ul>
+        <div class="mt-4 p-3 bg-slate-100 rounded-lg">
+            <h4 class="font-bold text-slate-800">资源消耗说明：</h4>
+            <p class="text-sm">不同的工艺对象会占用不同数量的资源单位，在规划时需确保总消耗不超过800。计算方式如下：</p>
+            <ul class="list-disc list-inside mt-2 space-y-1 text-sm">
+                <li><strong>同步轴:</strong> 160 个资源单位 (800 / 160 = 5个轴)</li>
+                <li><strong>定位轴:</strong> 80 个资源单位</li>
+                <li><strong>速度控制轴:</strong> 40 个资源单位</li>
+                <li><strong>外部编码器:</strong> 80 个资源单位</li>
+                <li><strong>凸轮轨:</strong> 160 个资源单位</li>
+            </ul>
+        </div>`
+    },
+    design: {
+        title: '紧凑设计与更高密度的I/O',
+        content: `
+        <ul class="list-disc list-inside mt-2 space-y-2">
+            <li><strong class="text-slate-800">节省安装空间：</strong>G2系列的设计更为紧凑，DIN导轨的占用长度减少了约25%，有助于在有限的电控柜空间内实现更高密度的布局。</li>
+            <li><strong class="text-slate-800">高密度端子和可移动接线：</strong>采用了推入式（Push-in）接线端子，接线更快速、更可靠。可移动的高密度端子设计方便了预接线，简化了安装和维护过程。</li>
+            <li><strong class="text-slate-800">增强的信号板概念：</strong>CPU本体可扩展的信号板数量增加，例如CPU 1214C可以支持最多两个信号板，在不增加控制器本体宽度的情况下，灵活地增加少量I/O点数或通信接口。</li>
+        </ul>`
+    },
+    diagnostics: {
+        title: '增强的安全性与诊断功能',
+        content: `
+        <ul class="list-disc list-inside mt-2 space-y-2">
+            <li><strong class="text-slate-800">集成的安全功能：</strong>提供故障安全型（Failsafe）CPU选项，将标准自动化与安全技术集成于一体，简化了机器安全方案的设计。</li>
+            <li><strong class="text-slate-800">系统日志（Syslog）：</strong>增强的系统日志功能，可以记录详细的事件信息，便于故障诊断和系统维护。</li>
+            <li><strong class="text-slate-800">NFC功能：</strong>集成了近场通信（NFC）功能，用户可以通过智能手机上的SIMATIC S7-1200 G2 NFC App，在设备<strong class="text-indigo-600">断电的情况</strong>下实现以下操作：
+                <ul class="list-decimal list-inside ml-4 mt-1 text-sm">
+                    <li><strong>识别：</strong>读取CPU订货号、序列号、固件版本等硬件信息。</li>
+                    <li><strong>诊断：</strong>读取CPUの诊断缓冲区和状态信息。</li>
+                    <li><strong>配置：</strong>读取和写入IP地址。</li>
+                    <li><strong>操作：</strong>切换CPU运行模式 (RUN/STOP)，设定时间，恢复出厂设置。</li>
+                </ul>
+            </li>
+        </ul>`
+    }
+};
+
+
+let powerChart;
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('config-form');
+    form.addEventListener('input', updateConfiguration);
+
+    const ctx = document.getElementById('power-chart').getContext('2d');
+    powerChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: ['功率预算 (mA)'], datasets: [ { label: 'CPU 供电能力', data: [0], backgroundColor: 'rgba(99, 102, 241, 0.6)', borderColor: 'rgba(99, 102, 241, 1)', borderWidth: 1 }, { label: '模块总消耗', data: [0], backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 } ] },
+        options: { maintainAspectRatio: false, responsive: true, indexAxis: 'y', scales: { x: { beginAtZero: true, title: { display: true, text: 'mA' } } }, plugins: { legend: { position: 'top' } } }
+    });
+
+    // 初始化模态框和BOM复制功能
+    initializeModal();
+    initializeCopyBOM();
+
+    updateConfiguration();
+});
+
+// 初始化模态框事件监听
+function initializeModal() {
+    const modalOverlay = document.getElementById('highlight-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const closeModalBtn = document.getElementById('modal-close-btn');
+    const highlightCards = document.querySelectorAll('.highlight-card');
+
+    highlightCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const highlightKey = card.dataset.highlight;
+            const details = highlightDetails[highlightKey];
+            if (details) {
+                modalTitle.textContent = details.title;
+                modalBody.innerHTML = details.content;
+                modalOverlay.classList.add('active');
+            }
+        });
+    });
+
+    const closeModal = () => {
+        modalOverlay.classList.remove('active');
+    };
+
+    closeModalBtn.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (event) => {
+        if (event.target === modalOverlay) {
+            closeModal();
+        }
+    });
+}
+
+// 初始化一键复制BOM功能
+function initializeCopyBOM() {
+    const copyBtn = document.getElementById('copy-bom-btn');
+    copyBtn.addEventListener('click', () => {
+        const bomTableBody = document.getElementById('bom-table');
+        let bomText = "组件类型\t型号描述\t订货号\t数量\t价格\n";
+
+        bomTableBody.querySelectorAll('tr').forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td')).map(cell => `"${cell.innerText.replace(/"/g, '""')}"`);
+            bomText += cells.join('\t') + '\n';
+        });
+        
+        // 使用 Clipboard API 写入文本
+        navigator.clipboard.writeText(bomText).then(() => {
+            const originalBtnContent = copyBtn.innerHTML;
+            copyBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16">
+                  <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022z"/>
+                </svg>
+                <span>已复制!</span>`;
+            copyBtn.classList.add('bg-green-500', 'text-white');
+            copyBtn.classList.remove('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300');
+
+
+            setTimeout(() => {
+                copyBtn.innerHTML = originalBtnContent;
+                copyBtn.classList.remove('bg-green-500', 'text-white');
+                copyBtn.classList.add('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300');
+            }, 2000);
+        }).catch(err => {
+            console.error('无法复制BOM: ', err);
+            // 可以添加一个错误提示
+        });
+    });
+}
+
+
+// 从表单获取所有用户输入
+function getInputs() {
+    const reserve = 1 + (parseInt(document.getElementById('expansion_reserve').value) / 100);
+    return {
+        di: Math.ceil((parseInt(document.getElementById('di').value) || 0) * reserve),
+        do_t: Math.ceil((parseInt(document.getElementById('do_t').value) || 0) * reserve),
+        ai: parseInt(document.getElementById('ai').value) || 0,
+        ao: parseInt(document.getElementById('ao').value) || 0,
+        tc: parseInt(document.getElementById('tc').value) || 0,
+        rtd: parseInt(document.getElementById('rtd').value) || 0,
+        hsc: parseInt(document.getElementById('hsc').value) || 0,
+        comm_rs485: document.getElementById('comm_rs485').checked,
+        fail_safe: document.getElementById('fail_safe').checked,
+    };
+}
+
+// 核心选型逻辑
+function updateConfiguration() {
+    const needs = getInputs();
+    const potentialCpus = S7_1200_G2_DATA.cpus.filter(cpu => cpu.hsc >= needs.hsc && cpu.f_cpu === needs.fail_safe);
+
+    if (potentialCpus.length === 0) {
+        renderResults(null, [], [], [], `找不到满足功能需求的CPU (HSC/Fail-Safe)。`);
+        return;
+    }
+
+    let bestOverallConfig = null;
+
+    // 遍历所有可能的CPU，为每个CPU找到最优的模块组合
+    for (const cpu of potentialCpus) {
+        let remainingNeeds = { ...needs };
+        remainingNeeds.di -= cpu.di;
+        remainingNeeds.do_t -= cpu.do_t;
+
+        const scenarios = [];
+        
+        // 场景 1: 只使用SM模块
+        scenarios.push(calculateModuleCost([], remainingNeeds, cpu.sm));
+
+        // 场景 2: 使用1个SB
+        if (cpu.sb >= 1) {
+            for (const sb of S7_1200_G2_DATA.sbs) {
+                let needsAfterSb1 = { ...remainingNeeds };
+                needsAfterSb1.di -= sb.di || 0;
+                needsAfterSb1.do_t -= sb.do_t || 0;
+                needsAfterSb1.ai -= sb.ai || 0;
+                needsAfterSb1.ao -= sb.ao || 0;
+                needsAfterSb1.tc -= sb.type === 'tc_sb' ? sb.points : 0;
+                needsAfterSb1.rtd -= sb.type === 'rtd_sb' ? sb.points : 0;
+                needsAfterSb1.comm_rs485 = sb.type === 'comm_rs485' ? false : needsAfterSb1.comm_rs485;
+                
+                scenarios.push(calculateModuleCost([sb], needsAfterSb1, cpu.sm));
+            }
+        }
+        
+        // 场景 3: 使用2个SB (仅当CPU支持)
+        if (cpu.sb >= 2) {
+             for (let i = 0; i < S7_1200_G2_DATA.sbs.length; i++) {
+                for (let j = i; j < S7_1200_G2_DATA.sbs.length; j++) { // Use j=i to avoid duplicate pairs
+                    const sb1 = S7_1200_G2_DATA.sbs[i];
+                    const sb2 = S7_1200_G2_DATA.sbs[j];
+                    let needsAfterSb2 = { ...remainingNeeds };
+
+                    [sb1, sb2].forEach(sb => {
+                        needsAfterSb2.di -= sb.di || 0;
+                        needsAfterSb2.do_t -= sb.do_t || 0;
+                        needsAfterSb2.ai -= sb.ai || 0;
+                        needsAfterSb2.ao -= sb.ao || 0;
+                        needsAfterSb2.tc -= sb.type === 'tc_sb' ? sb.points : 0;
+                        needsAfterSb2.rtd -= sb.type === 'rtd_sb' ? sb.points : 0;
+                        needsAfterSb2.comm_rs485 = sb.type === 'comm_rs485' ? false : needsAfterSb2.comm_rs485;
+                    });
+                     scenarios.push(calculateModuleCost([sb1, sb2], needsAfterSb2, cpu.sm));
+                }
+            }
+        }
+
+        // 过滤无效场景并找到当前CPU下的最优配置
+        const validScenarios = scenarios.filter(s => s.isValid);
+        if (validScenarios.length > 0) {
+            const bestScenarioForCpu = validScenarios.reduce((best, current) => (current.cost < best.cost ? current : best));
+            const totalCost = cpu.price + bestScenarioForCpu.cost;
+
+            if (!bestOverallConfig || totalCost < bestOverallConfig.cost) {
+                bestOverallConfig = {
+                    cpu: cpu,
+                    sbs: bestScenarioForCpu.sbs,
+                    modules: bestScenarioForCpu.sms,
+                    cost: totalCost,
+                };
+            }
+        }
+    }
+
+    if (bestOverallConfig) {
+        let bom = [{ ...bestOverallConfig.cpu, count: 1, type: 'CPU' }];
+        const sbCounts = bestOverallConfig.sbs.reduce((acc, m) => { acc[m.order] = (acc[m.order] || { ...m, count: 0 }); acc[m.order].count++; return acc; }, {});
+        const smCounts = bestOverallConfig.modules.reduce((acc, m) => { acc[m.order] = (acc[m.order] || { ...m, count: 0 }); acc[m.order].count++; return acc; }, {});
+        bom = bom.concat(Object.values(sbCounts).map(m => ({ ...m, type: '信号板' })));
+        bom = bom.concat(Object.values(smCounts).map(m => ({ ...m, type: m.is_cm ? '通信模块' : '信号模块' })));
+        bom.push({ ...S7_1200_G2_DATA.accessories.find(a => a.id === 'PM'), count: 1, type: '附件' });
+        bom.push({ ...S7_1200_G2_DATA.accessories.find(a => a.id === 'SMC'), count: 1, type: '附件' });
+        renderResults(bestOverallConfig.cpu, bestOverallConfig.sbs, bestOverallConfig.modules, bom, null);
+    } else {
+        renderResults(null, [], [], [], `无法为您的需求找到一个有效的 S7-1200 G2 配置。请尝试调整需求或考虑更高阶的PLC系列。`);
+    }
+}
+
+function calculateModuleCost(initialSbs, needs, maxSmSlots) {
+    let currentSms = [];
+    let remaining = { ...needs };
+    
+    const addModule = (type, prop) => {
+        const modules = S7_1200_G2_DATA.sms.filter(m => m.type === type).sort((a,b) => a.price/a.points - b.price/b.points);
+        if (modules.length === 0) return;
+        
+        while (remaining[prop] > 0) {
+            const bestModule = modules[0]; // Pick most cost-effective per point
+            if (!bestModule) break;
+            currentSms.push(bestModule);
+            remaining[prop] -= bestModule.points || (bestModule.ai || 0) + (bestModule.ao || 0);
+        }
+    };
+    
+    if (remaining.comm_rs485) {
+        const cm = S7_1200_G2_DATA.sms.find(m => m.type === 'comm_rs485');
+        if(cm) currentSms.push(cm);
+    }
+    
+    addModule('di', 'di');
+    addModule('do_t', 'do_t');
+    addModule('ai', 'ai');
+    addModule('ao', 'ao');
+    addModule('rtd', 'rtd');
+    addModule('tc', 'tc');
+
+    const isValid = currentSms.length <= maxSmSlots;
+    const cost = (initialSbs.reduce((sum, sb) => sum + sb.price, 0)) + (currentSms.reduce((sum, sm) => sum + sm.price, 0));
+
+    return { sbs: initialSbs, sms: currentSms, cost: cost, isValid: isValid };
+}
+
+// 将计算出的配置渲染到UI
+function renderResults(cpu, sbs, modules, bom, error) {
+    const validationSummaryEl = document.getElementById('validation-summary');
+    const cpuResultEl = document.getElementById('cpu-result');
+    const sbResultEl = document.getElementById('sb-result');
+    const modulesResultEl = document.getElementById('modules-result');
+    const slotsResultEl = document.getElementById('slots-result');
+    const bomTableEl = document.getElementById('bom-table');
+    const bomFooterEl = document.getElementById('bom-footer');
+
+    validationSummaryEl.innerHTML = '';
+    bomTableEl.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">等待配置生成...</td></tr>';
+    bomFooterEl.innerHTML = '';
+
+    if (error) {
+        validationSummaryEl.className = 'error-message p-4 rounded-lg';
+        validationSummaryEl.innerHTML = `<strong>配置错误:</strong> ${error}`;
+        [cpuResultEl, sbResultEl, modulesResultEl].forEach(el => el.innerHTML = '-');
+        slotsResultEl.innerHTML = '<p class="text-sm text-slate-500">等待输入...</p>';
+        powerChart.data.datasets[0].data[0] = 0; powerChart.data.datasets[1].data[0] = 0;
+        powerChart.update();
+        return;
+    }
+
+    if (!cpu) return;
+    
+    validationSummaryEl.className = 'success-message p-4 rounded-lg';
+    validationSummaryEl.innerHTML = '<strong>配置校验通过!</strong> 已为您找到最经济的硬件组合。';
+
+    cpuResultEl.innerHTML = `<span class="font-bold result-highlight">${cpu.name}</span> <br> <span class="text-sm text-slate-500">${cpu.order}</span>`;
+    
+    const sbCounts = sbs.reduce((acc, m) => { acc[m.order] = (acc[m.order] || { ...m, count: 0 }); acc[m.order].count++; return acc; }, {});
+    sbResultEl.innerHTML = Object.keys(sbCounts).length > 0 ? Object.values(sbCounts).map(m => `<div class="text-sm">${m.count}x ${m.name} (${m.order})</div>`).join('') : '<span class="text-sm text-slate-500">未使用信号板。</span>';
+
+    const moduleCounts = modules.reduce((acc, m) => { acc[m.order] = (acc[m.order] || { ...m, count: 0 }); acc[m.order].count++; return acc; }, {});
+    modulesResultEl.innerHTML = Object.keys(moduleCounts).length > 0 ? Object.values(moduleCounts).map(m => `<div class="text-sm">${m.count}x ${m.name} (${m.order})</div>`).join('') : '<span class="text-sm text-slate-500">无需额外扩展模块。</span>';
+    
+    let sbSlotsHtml = `<div><h5 class="text-xs font-bold mb-1">信号板 (SB):</h5><div class="flex items-center space-x-1 flex-wrap">`;
+    for(let i=0; i < sbs.length; i++) sbSlotsHtml += `<div class="p-1 bg-purple-200 text-purple-800 rounded text-xs font-mono">SB</div>`;
+    for(let i=0; i < cpu.sb - sbs.length; i++) sbSlotsHtml += `<div class="p-1 bg-slate-200 text-slate-500 rounded text-xs font-mono">空闲</div>`;
+    sbSlotsHtml += `</div></div>`;
+
+    let smSlotsHtml = `<div><h5 class="text-xs font-bold mb-1 mt-2">信号模块 (SM):</h5><div class="flex items-center space-x-1 flex-wrap">`;
+    for(let i=0; i < modules.length; i++) smSlotsHtml += `<div class="p-1 bg-green-200 text-green-800 rounded text-xs font-mono">SM</div>`;
+    for(let i=0; i < cpu.sm - modules.length; i++) smSlotsHtml += `<div class="p-1 bg-slate-200 text-slate-500 rounded text-xs font-mono">空闲</div>`;
+    smSlotsHtml += `</div></div>`;
+    slotsResultEl.innerHTML = sbSlotsHtml + smSlotsHtml;
+
+    const totalPower = [...sbs, ...modules].reduce((sum, m) => sum + m.power, 0);
+    powerChart.data.datasets[0].data[0] = cpu.power;
+    powerChart.data.datasets[1].data[0] = totalPower;
+    powerChart.options.scales.x.max = Math.max(cpu.power, totalPower, 100) * 1.2;
+    powerChart.update();
+    
+    let bomHtml = '';
+    bom.forEach(item => {
+        bomHtml += `<tr>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${item.type}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${item.name}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-500">${item.order}</td>
+            <td class="px-6 py-4 text-center text-sm text-slate-700">${item.count}</td>
+            <td class="px-6 py-4 text-right text-sm text-slate-700">请询价</td>
+        </tr>`;
+    });
+    bomTableEl.innerHTML = bomHtml;
+
+    // 移除总价格的显示
+    bomFooterEl.innerHTML = ''; 
+}
+</script>
+
+</body>
+</html>
